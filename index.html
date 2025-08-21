@@ -876,6 +876,88 @@
             }
         };
 
+        // Authentication: UI wiring with Firebase Auth (compat)
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!window.firebaseAuth) {
+                console.warn('Firebase Auth not initialized');
+                return;
+            }
+
+            const auth = window.firebaseAuth;
+            const authContainer = document.getElementById('authContainer');
+            const appContainer = document.getElementById('appContainer');
+            const authSubmit = document.getElementById('authSubmit');
+            const toggleAuth = document.getElementById('toggleAuth');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const authError = document.getElementById('authError');
+            const authLoading = document.getElementById('authLoading');
+            const emailInput = document.getElementById('authEmail');
+            const passwordInput = document.getElementById('authPassword');
+            const userEmailSpan = document.getElementById('userEmail');
+
+            let isSignUpMode = false;
+            function renderAuthMode() {
+                if (authSubmit) authSubmit.textContent = isSignUpMode ? 'Sign Up' : 'Sign In';
+                if (toggleAuth) toggleAuth.innerHTML = isSignUpMode
+                    ? 'Already have an account? <span>Sign In</span>'
+                    : 'Don\'t have an account? <span>Sign Up</span>';
+            }
+            renderAuthMode();
+
+            if (toggleAuth) {
+                toggleAuth.addEventListener('click', function() {
+                    isSignUpMode = !isSignUpMode;
+                    renderAuthMode();
+                });
+            }
+
+            if (authSubmit) {
+                authSubmit.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    if (authError) { authError.style.display = 'none'; authError.textContent = ''; }
+                    if (authLoading) authLoading.style.display = 'block';
+
+                    const email = (emailInput && emailInput.value || '').trim();
+                    const password = passwordInput && passwordInput.value || '';
+                    try {
+                        if (isSignUpMode) {
+                            await auth.createUserWithEmailAndPassword(email, password);
+                        } else {
+                            await auth.signInWithEmailAndPassword(email, password);
+                        }
+                    } catch (err) {
+                        if (authError) {
+                            authError.textContent = (err && err.message) || 'Authentication failed';
+                            authError.style.display = 'block';
+                        }
+                        console.error('Auth error:', err);
+                    } finally {
+                        if (authLoading) authLoading.style.display = 'none';
+                    }
+                });
+            }
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try { await auth.signOut(); } catch (e) { console.error('Logout error:', e); }
+                });
+            }
+
+            auth.onAuthStateChanged(function(user) {
+                if (user) {
+                    if (authContainer) authContainer.style.display = 'none';
+                    if (appContainer) appContainer.style.display = 'block';
+                    if (userEmailSpan) userEmailSpan.textContent = user.email || 'User';
+                    // Load existing local data and refresh UI
+                    updateAllDisplays();
+                } else {
+                    if (appContainer) appContainer.style.display = 'none';
+                    if (authContainer) authContainer.style.display = 'block';
+                    if (userEmailSpan) userEmailSpan.textContent = '';
+                }
+            });
+        });
+
         // Tab switching
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => {
