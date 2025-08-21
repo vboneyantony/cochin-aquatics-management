@@ -869,12 +869,45 @@
             try {
                 localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
                 console.log('💾 Data saved successfully');
+                // Also persist to Firebase Realtime Database if signed in
+                try {
+                    if (window.firebaseAuth && window.firebaseAuth.currentUser && window.firebaseDb) {
+                        const uid = window.firebaseAuth.currentUser.uid;
+                        window.firebaseDb.ref('users/' + uid + '/appData').set(appData).catch(function(err){
+                            console.error('❌ Error saving to database:', err);
+                        });
+                    }
+                } catch (e) {
+                    console.error('❌ DB save wrapper error:', e);
+                }
                 return true;
             } catch (error) {
                 console.error('❌ Error saving data:', error);
                 return false;
             }
         };
+
+        // Load user data from Realtime Database (if available)
+        async function loadUserDataFromDatabase(uid) {
+            try {
+                if (!window.firebaseDb) return false;
+                const snapshot = await window.firebaseDb.ref('users/' + uid + '/appData').once('value');
+                const remote = snapshot.val();
+                if (remote && typeof remote === 'object') {
+                    appData = { ...getDefaultAppData(), ...remote };
+                    // Mirror to localStorage for offline usage
+                    try { localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData)); } catch(_) {}
+                    updateAllDisplays();
+                    console.log('☁️ Loaded data from Realtime Database');
+                    return true;
+                }
+                console.log('ℹ️ No remote data found; using local defaults');
+                return false;
+            } catch (e) {
+                console.error('❌ Error loading from database:', e);
+                return false;
+            }
+        }
 
         // Authentication: UI wiring with Firebase Auth (compat)
         document.addEventListener('DOMContentLoaded', function() {
@@ -948,8 +981,12 @@
                     if (authContainer) authContainer.style.display = 'none';
                     if (appContainer) appContainer.style.display = 'block';
                     if (userEmailSpan) userEmailSpan.textContent = user.email || 'User';
-                    // Load existing local data and refresh UI
-                    updateAllDisplays();
+                    // Load existing user data from DB, fallback handled inside
+                    loadUserDataFromDatabase(user.uid).then(function(loaded){
+                        if (!loaded) {
+                            updateAllDisplays();
+                        }
+                    });
                 } else {
                     if (appContainer) appContainer.style.display = 'none';
                     if (authContainer) authContainer.style.display = 'block';
