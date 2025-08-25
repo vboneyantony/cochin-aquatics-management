@@ -1,13 +1,14 @@
 // Firebase Configuration
 // Replace with your actual Firebase config
 const firebaseConfig = {
-    apiKey: "your-api-key-here",
-    authDomain: "your-project.firebaseapp.com",
+    apiKey: "AIzaSyASiFSwx9XWnwqRu07YVCmvJ8Txg-t_eLY",
+    authDomain: "cochin-aquatics-manageme-bf543.firebaseapp.com",
     databaseURL: "https://your-project-default-rtdb.firebaseio.com/",
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "your-app-id"
+    projectId: "cochin-aquatics-manageme-bf543",
+    storageBucket: "cochin-aquatics-manageme-bf543.firebasestorage.app",
+    messagingSenderId: "625465354366",
+    appId: "1:625465354366:web:4985c0c7e5daf4405f102f"
+    measurementId: "G-WYTZ6G2XN0"
 };
 
 // Initialize Firebase
