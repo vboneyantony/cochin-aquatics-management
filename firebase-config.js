@@ -3,7 +3,7 @@
 const firebaseConfig = {
     apiKey: "AIzaSyASiFSwx9XWnwqRu07YVCmvJ8Txg-t_eLY",
     authDomain: "cochin-aquatics-manageme-bf543.firebaseapp.com",
-    databaseURL: "https://cochin-aquatics-manageme-bf543-default-rtdb.firebaseio.com/",
+    databaseURL: "https://cochin-aquatics-manageme-bf543-default-rtdb.asia-southeast1.firebasedatabase.app/",
     projectId: "cochin-aquatics-manageme-bf543",
     storageBucket: "cochin-aquatics-manageme-bf543.firebasestorage.app",
     messagingSenderId: "625465354366",
@@ -19,5 +19,6 @@ const auth = firebase.auth();
 const database = firebase.database();
 
 console.log('🔥 Firebase initialized successfully!');
+
 
 
