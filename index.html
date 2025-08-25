@@ -2332,14 +2332,42 @@
         }
 
         function clearAllData() {
-            if (confirm('⚠️ Are you sure you want to clear all data? This cannot be undone!')) {
-                if (confirm('⚠️ This will delete everything! Are you really sure?')) {
-                    localStorage.removeItem('cochinAquaticsDataV2');
-                    localStorage.removeItem('cochinAquaticsData');
+    console.log('🗑️ Clear All Data function called');
+    
+    if (confirm('⚠️ Are you sure you want to clear all data? This cannot be undone!')) {
+        if (confirm('⚠️ This will delete everything! Are you really sure?')) {
+            console.log('✅ User confirmed clearing');
+            
+            // Clear localStorage first
+            localStorage.removeItem('cochinAquaticsDataV2');
+            localStorage.removeItem('cochinAquaticsData');
+            console.log('✅ localStorage cleared');
+            
+            // Clear Firebase data
+            if (currentUser && currentUser.uid) {
+                console.log('🔄 Clearing Firebase for user:', currentUser.uid);
+                const userRef = database.ref(`users/${currentUser.uid}/aquaticsData`);
+                
+                userRef.remove().then(() => {
+                    console.log('✅ Firebase data cleared successfully');
+                    alert('✅ All data cleared successfully!');
                     location.reload();
-                }
+                }).catch((error) => {
+                    console.error('❌ Firebase clear error:', error);
+                    alert('⚠️ Error clearing cloud data: ' + error.message);
+                    location.reload();
+                });
+            } else {
+                console.log('⚠️ No authenticated user found');
+                alert('✅ Local data cleared (no cloud user found)');
+                location.reload();
             }
+        } else {
+            console.log('❌ User cancelled at second confirmation');
         }
+    } else {
+        console.log('❌ User cancelled at first confirmation');
+    }
 
         // Initialize app on load
         document.addEventListener('DOMContentLoaded', function() {
