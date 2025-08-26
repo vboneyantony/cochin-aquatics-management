@@ -2717,6 +2717,151 @@
             return '✅ Test transaction added successfully!';
         };
 
+        // ===== CRITICAL FIX: Enhanced Save/Load Data Functions =====
+        
+        // Ensure global currentUser is available
+        let globalCurrentUser = null;
+        
+        function enhancedSaveData() {
+            const currentUser = firebase.auth().currentUser || globalCurrentUser;
+            
+            // Save to localStorage first (for offline use)
+            try {
+                localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
+                console.log('💾 Local data saved successfully');
+            } catch (error) {
+                console.error('❌ Local save error:', error);
+            }
+            
+            // Save to Firebase if user is authenticated
+            if (currentUser && currentUser.uid) {
+                console.log('☁️ Saving to Firebase for user:', currentUser.uid);
+                const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
+                userRef.set(appData).then(() => {
+                    console.log('✅ Firebase data saved successfully');
+                }).catch((error) => {
+                    console.error('❌ Firebase save error:', error);
+                });
+            } else {
+                console.log('⚠️ No authenticated user - only local save');
+            }
+            return true;
+        }
+
+        function enhancedLoadData() {
+            const currentUser = firebase.auth().currentUser || globalCurrentUser;
+            
+            if (currentUser && currentUser.uid) {
+                console.log('☁️ Loading from Firebase for user:', currentUser.uid);
+                const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
+                
+                userRef.once('value', (snapshot) => {
+                    const firebaseData = snapshot.val();
+                    
+                    if (firebaseData) {
+                        console.log('✅ Firebase data loaded successfully');
+                        console.log('📊 Transactions found:', firebaseData.transactions?.length || 0);
+                        console.log('💰 Expenses found:', firebaseData.expenses?.length || 0);
+                        
+                        // CRITICAL: Complete replacement, no merging that overwrites data
+                        window.appData = firebaseData;
+                        
+                        // Ensure essential properties exist without overwriting existing data
+                        if (!window.appData.fishTypes || window.appData.fishTypes.length === 0) {
+                            window.appData.fishTypes = getDefaultAppData().fishTypes;
+                        }
+                        if (!window.appData.expenseCategories || window.appData.expenseCategories.length === 0) {
+                            window.appData.expenseCategories = getDefaultAppData().expenseCategories;
+                        }
+                        if (!window.appData.ponds || window.appData.ponds.length === 0) {
+                            window.appData.ponds = getDefaultAppData().ponds;
+                        }
+                        
+                        console.log('📋 Final transactions count:', window.appData.transactions?.length || 0);
+                        console.log('💰 Final expenses count:', window.appData.expenses?.length || 0);
+                        
+                        // Update all displays
+                        updateAllDisplays();
+                        console.log('🔄 UI updated with Firebase data');
+                        
+                        // Also save to localStorage for offline use
+                        try {
+                            localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
+                            console.log('💾 Data synced to localStorage');
+                        } catch (e) {
+                            console.error('❌ localStorage sync error:', e);
+                        }
+                    } else {
+                        console.log('ℹ️ No Firebase data found, loading from localStorage');
+                        loadDataFromLocalStorage();
+                    }
+                }).catch((error) => {
+                    console.error('❌ Firebase load error:', error);
+                    loadDataFromLocalStorage();
+                });
+            } else {
+                console.log('⚠️ No authenticated user - loading from localStorage only');
+                loadDataFromLocalStorage();
+            }
+        }
+
+        function loadDataFromLocalStorage() {
+            const savedData = localStorage.getItem('cochinAquaticsDataV2') || localStorage.getItem('cochinAquaticsData');
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    window.appData = { ...getDefaultAppData(), ...parsed };
+                    updateAllDisplays();
+                    console.log('💾 Local data loaded');
+                } catch (error) {
+                    console.error('❌ Local load error:', error);
+                    window.appData = getDefaultAppData();
+                    updateAllDisplays();
+                }
+            } else {
+                console.log('ℹ️ No local data found, using defaults');
+                window.appData = getDefaultAppData();
+                updateAllDisplays();
+            }
+        }
+
+        // Override ALL save functions with the enhanced version
+        window.saveData = enhancedSaveData;
+        
+        // OVERRIDE the existing auth state listener with WORKING version
+        firebase.auth().onAuthStateChanged((user) => {
+            const authContainer = document.getElementById('authContainer');
+            const appContainer = document.getElementById('appContainer');
+            const userEmailElement = document.getElementById('userEmail');
+            
+            if (user) {
+                console.log('✅ User authenticated:', user.email);
+                globalCurrentUser = user; // Store user globally
+                if (authContainer) authContainer.style.display = 'none';
+                if (appContainer) appContainer.style.display = 'block';
+                if (userEmailElement) userEmailElement.textContent = user.email;
+                
+                // CRITICAL: Load user data immediately after authentication
+                setTimeout(() => {
+                    console.log('🔄 Auto-loading user data...');
+                    enhancedLoadData();
+                }, 500);
+                
+            } else {
+                console.log('❌ User not authenticated');
+                globalCurrentUser = null; // Clear user globally
+                if (authContainer) authContainer.style.display = 'block';
+                if (appContainer) appContainer.style.display = 'none';
+                
+                // Clear data when logged out for security
+                window.appData = getDefaultAppData();
+                updateAllDisplays();
+            }
+        });
+
+        console.log('✅ CRITICAL FIX: Enhanced save/load data functions installed');
+        // ===== END CRITICAL FIX =====
+
     }  // Close any remaining scope
 
     </script>
