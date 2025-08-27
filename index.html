@@ -1422,3 +1422,80 @@ Perfect! Now copy this chunk and paste it right after Chunk 3:
             
             return { startDate, endDate };
         }
+        // ===== TAB SWITCHING =====
+        function switchTab(tabName) {
+            console.log(`🔄 Switching to tab: ${tabName}`);
+            
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            const selectedTab = document.getElementById(tabName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+                
+                const tabButton = document.querySelector(`.tab[data-tab="${tabName}"]`);
+                if (tabButton) {
+                    tabButton.classList.add('active');
+                }
+                
+                forceUIUpdate();
+            }
+        }
+
+        // ===== PERIOD CHANGING =====
+        function changeDashboardPeriod(period, btn) {
+            appData.currentDashboardPeriod = period;
+            document.querySelectorAll('#dashboard .period-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            updateDashboard();
+        }
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Cochin Aquatics System v2.0 - Starting...');
+            
+            // Initialize default data first
+            appData = getDefaultAppData();
+            
+            // Initialize authentication
+            if (typeof firebase !== 'undefined') {
+                initializeAuth();
+            } else {
+                console.error('❌ Firebase not loaded');
+            }
+            
+            // Setup tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                const tabName = tab.getAttribute('data-tab');
+                if (tabName) {
+                    tab.addEventListener('click', () => switchTab(tabName));
+                }
+            });
+            
+            console.log('✅ System initialized');
+        });
+
+        // Make functions globally available
+        window.unifiedSaveData = unifiedSaveData;
+        window.addFishType = addFishType;
+        window.removeFishType = removeFishType;
+        window.addPerson = addPerson;
+        window.removePerson = removePerson;
+        window.addPond = addPond;
+        window.removePond = removePond;
+        window.addQuickTransaction = addQuickTransaction;
+        window.switchTab = switchTab;
+        window.changeDashboardPeriod = changeDashboardPeriod;
+        window.updateDashboard = updateDashboard;
+
+        console.log('🎉 COMPLETE UNIFIED SYSTEM LOADED');
+
+        // ===== END COMPLETE UNIFIED SYSTEM =====
+    </script>
+</body>
+</html>
