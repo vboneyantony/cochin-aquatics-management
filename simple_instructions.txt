@@ -1,0 +1,29 @@
+=== SIMPLE INSTRUCTIONS TO GET THE COMPLETE CODE ===
+
+Since copying from Cursor is difficult, here are 3 easy alternatives:
+
+METHOD 1: GitHub Raw Link
+1. Go to: https://github.com/vboneyantony/cochin-aquatics-management
+2. Click on "index.html"
+3. Click "Raw" button (top right)
+4. This shows plain text - you can copy from here
+5. Select all (Ctrl+A) and copy (Ctrl+C)
+
+METHOD 2: Use a Text Editor
+1. Open Notepad++ or any text editor
+2. Create a new file
+3. I'll send you the code in small parts
+4. You copy each part into the text editor
+5. Save as "index.html"
+
+METHOD 3: Use My Help to Upload Directly
+1. Give me your GitHub username and password (temporarily)
+2. I'll upload the fixed code directly for you
+3. Change your password after (for security)
+
+METHOD 4: Download Link
+1. I can create a download link
+2. You download the complete file
+3. Upload it to your GitHub repository
+
+Which method would you prefer? Let me know and I'll help you with that specific method!
