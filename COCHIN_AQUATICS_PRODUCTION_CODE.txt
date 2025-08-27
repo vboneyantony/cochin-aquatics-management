@@ -1,0 +1,1872 @@
+COCHIN AQUATICS MANAGEMENT SYSTEM v2.0 - PRODUCTION READY CODE
+================================================================
+
+INSTRUCTIONS:
+1. Copy ALL the code below (from <!DOCTYPE html> to </html>)
+2. Save it as a new file called "index.html" on your computer
+3. Upload this file to your GitHub repository
+
+COMPLETE PRODUCTION-READY CODE:
+===============================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cochin Aquatics Management System v2.0 - Production</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Authentication Styles */
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .auth-title {
+            color: #1e3c72;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .auth-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .auth-input {
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .auth-btn {
+            padding: 15px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-toggle {
+            margin-top: 20px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .auth-toggle span {
+            color: #1e3c72;
+            font-weight: 600;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* App Container Styles */
+        .app-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: none;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            position: relative;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .user-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 12px;
+            border-radius: 15px;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Navigation Tabs */
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+            transition: all 0.3s;
+            min-width: 120px;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            color: #1e3c72;
+            border-bottom: 3px solid #1e3c72;
+            background: white;
+        }
+
+        /* Content Area */
+        .content {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard Styles */
+        .period-selector {
+            display: inline-flex;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 25px;
+        }
+
+        .period-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .period-btn.active {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #1e3c72;
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-card.success { border-left-color: #38ef7d; }
+        .stat-card.danger { border-left-color: #f5576c; }
+        .stat-card.warning { border-left-color: #ffa726; }
+        .stat-card.info { border-left-color: #42a5f5; }
+
+        /* Form Styles */
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(56, 239, 125, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        /* List Styles */
+        .list-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .list-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .list-item:hover {
+            background: #f8f9fa;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Transaction Styles */
+        .transaction-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .transaction-item {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .transaction-item:hover {
+            background: #f8f9fa;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-type {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .type-sale {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .type-purchase {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .type-expense {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        /* Success Message */
+        .success-message {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .app-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tab {
+                flex-shrink: 0;
+                min-width: 100px;
+                padding: 12px 16px;
+            }
+
+            .user-info, .logout-btn {
+                position: static;
+                display: inline-block;
+                margin: 5px;
+            }
+
+            .header {
+                text-align: left;
+                padding-bottom: 15px;
+            }
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #1e3c72;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Container -->
+    <div id="authContainer" class="auth-container">
+        <h2 class="auth-title">🐟 Cochin Aquatics</h2>
+        <p class="auth-subtitle">Professional Aquatics Management System</p>
+        <div class="auth-form">
+            <input type="email" id="authEmail" class="auth-input" placeholder="Email Address" required>
+            <input type="password" id="authPassword" class="auth-input" placeholder="Password" required>
+            <button id="authSubmit" class="auth-btn">Sign In</button>
+            <div class="auth-toggle" id="toggleAuth">
+                Don't have an account? <span>Sign Up</span>
+            </div>
+        </div>
+        <div id="authError" class="error-message"></div>
+        <div id="authLoading" style="display: none; margin-top: 15px; color: #1e3c72;">
+            <div class="loading-spinner"></div> Please wait...
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="appContainer" class="app-container">
+        <div class="header">
+            <div class="user-info" id="userInfo">
+                👤 <span id="userEmail"></span>
+            </div>
+            <button id="logoutBtn" class="logout-btn">🚪 Logout</button>
+            <h1>🐟 Cochin Aquatics Management System</h1>
+            <div class="subtitle">Multi-User • Real-Time • Cloud-Powered • v2.0</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab" data-tab="transactions">💰 Transactions</button>
+            <button class="tab" data-tab="settings">⚙️ Settings</button>
+            <button class="tab" data-tab="reports">📈 Reports</button>
+        </div>
+
+        <div class="content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <h2 style="margin-bottom: 25px; color: #2c3e50;">Financial Overview</h2>
+                
+                <div class="period-selector">
+                    <button class="period-btn active" onclick="changePeriod('today', this)">Today</button>
+                    <button class="period-btn" onclick="changePeriod('week', this)">This Week</button>
+                    <button class="period-btn" onclick="changePeriod('month', this)">This Month</button>
+                    <button class="period-btn" onclick="changePeriod('year', this)">This Year</button>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <h3>💰 <span id="periodLabel">Today's</span> Income</h3>
+                        <div class="value" id="totalIncome">₹0</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <h3>💸 <span id="periodLabelExpense">Today's</span> Expense</h3>
+                        <div class="value" id="totalExpense">₹0</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <h3>📈 <span id="periodLabelProfit">Today's</span> Profit</h3>
+                        <div class="value" id="totalProfit">₹0</div>
+                    </div>
+                    <div class="stat-card info">
+                        <h3>🐟 Active Ponds</h3>
+                        <div class="value" id="activePonds">0</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 30px 0 15px; color: #2c3e50;">Recent Transactions</h3>
+                <div class="transaction-list" id="recentTransactions">
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <h3>No transactions yet</h3>
+                        <p>Start by adding your first transaction!</p>
+                    </div>
+                </div>
+
+                <!-- Quick Add Transaction -->
+                <div class="form-section" style="margin-top: 30px;">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">Quick Add Transaction</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Transaction Type</label>
+                            <select id="quickType">
+                                <option value="sale">💰 Sale (Income)</option>
+                                <option value="purchase">🛒 Purchase (Expense)</option>
+                                <option value="expense">💸 General Expense</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="quickAmount" placeholder="Enter amount" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="quickDescription" placeholder="Brief description">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addQuickTransaction()">💾 Add Transaction</button>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div id="transactions" class="tab-content">
+                <h2 style="margin-bottom: 25px; color: #2c3e50;">Transaction Management</h2>
+                
+                <div class="form-section">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">Add Detailed Transaction</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="transactionDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="transactionType">
+                                <option value="sale">💰 Sale</option>
+                                <option value="purchase">🛒 Purchase</option>
+                                <option value="expense">💸 Expense</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer/Vendor</label>
+                            <select id="transactionPerson">
+                                <option value="">Select person</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="transactionAmount" placeholder="Enter amount" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Fish Type (if applicable)</label>
+                            <select id="transactionFishType">
+                                <option value="">Select fish type</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" id="transactionQuantity" placeholder="Quantity" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="transactionDescription" rows="3" placeholder="Detailed description"></textarea>
+                    </div>
+                    <button class="btn btn-success" onclick="addDetailedTransaction()">💾 Add Transaction</button>
+                </div>
+
+                <h3 style="margin: 30px 0 15px; color: #2c3e50;">All Transactions</h3>
+                <div id="allTransactions" class="transaction-list">
+                    <!-- Transactions will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <h2 style="margin-bottom: 25px; color: #2c3e50;">Settings & Configuration</h2>
+                
+                <!-- Fish Types Management -->
+                <div class="form-section">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">🐟 Manage Fish Types</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fish Type Name</label>
+                            <input type="text" id="newFishType" placeholder="Enter fish name">
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: end;">
+                            <button class="btn btn-success" onclick="addFishType()">Add Fish Type</button>
+                        </div>
+                    </div>
+                    <div id="fishTypesList" class="list-container">
+                        <!-- Fish types will be listed here -->
+                    </div>
+                </div>
+
+                <!-- People Management -->
+                <div class="form-section">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">👥 Manage Customers & Vendors</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Person Name</label>
+                            <input type="text" id="newPersonName" placeholder="Enter name">
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="personType">
+                                <option value="customer">Customer</option>
+                                <option value="vendor">Vendor</option>
+                                <option value="both">Both</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: end;">
+                            <button class="btn btn-success" onclick="addPerson()">Add Person</button>
+                        </div>
+                    </div>
+                    <div id="peopleList" class="list-container">
+                        <!-- People will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Ponds Management -->
+                <div class="form-section">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">🏊 Manage Ponds</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Pond Name</label>
+                            <input type="text" id="newPondName" placeholder="Pond name">
+                        </div>
+                        <div class="form-group">
+                            <label>Capacity (Liters)</label>
+                            <input type="number" id="newPondCapacity" placeholder="Capacity" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Primary Fish Type</label>
+                            <select id="newPondFishType">
+                                <option value="">Select fish type</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: end;">
+                            <button class="btn btn-success" onclick="addPond()">Add Pond</button>
+                        </div>
+                    </div>
+                    <div id="pondsList" class="list-container">
+                        <!-- Ponds will be listed here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reports" class="tab-content">
+                <h2 style="margin-bottom: 25px; color: #2c3e50;">Reports & Analytics</h2>
+                
+                <div class="form-section">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">📊 Business Summary</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Transactions</h3>
+                            <div class="value" id="totalTransactions">0</div>
+                        </div>
+                        <div class="stat-card success">
+                            <h3>Best Month</h3>
+                            <div class="value" id="bestMonth">-</div>
+                        </div>
+                        <div class="stat-card info">
+                            <h3>Total Fish Types</h3>
+                            <div class="value" id="totalFishTypes">0</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <h3>Total Customers</h3>
+                            <div class="value" id="totalCustomers">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">🔧 Data Management</h3>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="exportData()">📥 Export Data</button>
+                        <button class="btn btn-success" onclick="syncData()">🔄 Sync with Firebase</button>
+                        <button class="btn btn-danger" onclick="clearAllData()" style="margin-left: auto;">🗑️ Clear All Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="success-message">
+        <span id="successText">Operation completed successfully!</span>
+    </div>
+
+    <script>
+        // ===== COMPREHENSIVE AQUATICS MANAGEMENT SYSTEM =====
+        // Production-ready, single-instance, error-free implementation
+        
+        console.log('🚀 Initializing Cochin Aquatics Management System v2.0...');
+
+        // ===== GLOBAL STATE MANAGEMENT =====
+        const AquaticsSystem = {
+            // Data structure
+            data: {
+                transactions: [],
+                expenses: [],
+                ponds: [
+                    { id: 1, name: 'Main Pond', capacity: 15000, primaryFishType: 'Gold Fish', status: 'active' },
+                    { id: 2, name: 'Breeding Pond', capacity: 8000, primaryFishType: 'Angel Fish', status: 'active' },
+                    { id: 3, name: 'Quarantine Pond', capacity: 5000, primaryFishType: 'Carp', status: 'active' }
+                ],
+                fishTypes: [
+                    'Gold Fish', 'Angel Fish', 'Black Moors', 'Carp', 'Tetra', 
+                    'Guppy', 'Koi', 'Molly', 'Platy', 'Swordtail', 'Betta', 'Discus'
+                ],
+                people: [
+                    { name: 'Arjun Kumar', type: 'vendor', contact: '', address: '' },
+                    { name: 'Ben Sebastian', type: 'customer', contact: '', address: '' },
+                    { name: 'Raj Enterprises', type: 'both', contact: '', address: '' }
+                ],
+                settings: {
+                    currency: 'INR',
+                    businessName: 'Cochin Aquatics',
+                    currentPeriod: 'today'
+                },
+                metadata: {
+                    nextTransactionId: 1,
+                    nextExpenseId: 1,
+                    nextPondId: 4,
+                    lastSyncTime: null,
+                    version: '2.0'
+                }
+            },
+
+            // User authentication state
+            auth: {
+                currentUser: null,
+                isAuthenticated: false
+            },
+
+            // UI state
+            ui: {
+                currentTab: 'dashboard',
+                isLoading: false
+            }
+        };
+
+        // ===== UTILITY FUNCTIONS =====
+        const Utils = {
+            // Safe number conversion
+            toNumber: (value) => {
+                const num = Number(value);
+                return isNaN(num) ? 0 : num;
+            },
+
+            // Safe string conversion
+            toString: (value) => {
+                return String(value || '');
+            },
+
+            // Format currency
+            formatCurrency: (amount) => {
+                return `₹${Utils.toNumber(amount).toLocaleString('en-IN')}`;
+            },
+
+            // Format date
+            formatDate: (date) => {
+                try {
+                    return new Date(date).toLocaleDateString('en-IN');
+                } catch (e) {
+                    return 'Invalid Date';
+                }
+            },
+
+            // Generate unique ID
+            generateId: () => {
+                return Date.now() + Math.random().toString(36).substr(2, 9);
+            },
+
+            // Show success message
+            showSuccess: (message) => {
+                const successMsg = document.getElementById('successMessage');
+                const successText = document.getElementById('successText');
+                if (successMsg && successText) {
+                    successText.textContent = message;
+                    successMsg.classList.add('show');
+                    setTimeout(() => {
+                        successMsg.classList.remove('show');
+                    }, 3000);
+                }
+            },
+
+            // Show error message
+            showError: (message) => {
+                const errorMsg = document.getElementById('authError');
+                if (errorMsg) {
+                    errorMsg.textContent = message;
+                    errorMsg.style.display = 'block';
+                    setTimeout(() => {
+                        errorMsg.style.display = 'none';
+                    }, 5000);
+                }
+            },
+
+            // Get date range for period
+            getDateRange: (period) => {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                let startDate, endDate;
+
+                switch (period) {
+                    case 'today':
+                        startDate = today;
+                        endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+                        break;
+                    case 'week':
+                        const dayOfWeek = today.getDay();
+                        startDate = new Date(today.getTime() - dayOfWeek * 24 * 60 * 60 * 1000);
+                        endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'month':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                        break;
+                    case 'year':
+                        startDate = new Date(now.getFullYear(), 0, 1);
+                        endDate = new Date(now.getFullYear() + 1, 0, 1);
+                        break;
+                    default:
+                        startDate = today;
+                        endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+                }
+
+                return { startDate, endDate };
+            }
+        };
+
+        // ===== DATA PERSISTENCE =====
+        const DataManager = {
+            // Save data to both localStorage and Firebase
+            async save() {
+                try {
+                    console.log('💾 Saving data...');
+                    
+                    // Always save to localStorage first (immediate backup)
+                    localStorage.setItem('cochinAquaticsV2', JSON.stringify(AquaticsSystem.data));
+                    
+                    // Save to Firebase if authenticated
+                    if (AquaticsSystem.auth.currentUser?.uid) {
+                        const userRef = firebase.database().ref(`users/${AquaticsSystem.auth.currentUser.uid}/aquaticsData`);
+                        await userRef.set({
+                            ...AquaticsSystem.data,
+                            metadata: {
+                                ...AquaticsSystem.data.metadata,
+                                lastSyncTime: new Date().toISOString()
+                            }
+                        });
+                        console.log('✅ Firebase save successful');
+                    }
+                    
+                    // Update UI after successful save
+                    UIManager.updateAll();
+                    return true;
+                    
+                } catch (error) {
+                    console.error('❌ Save failed:', error);
+                    Utils.showError('Failed to save data. Please try again.');
+                    return false;
+                }
+            },
+
+            // Load data from Firebase with localStorage fallback
+            async load() {
+                try {
+                    console.log('📥 Loading data...');
+                    
+                    // Try Firebase first if authenticated
+                    if (AquaticsSystem.auth.currentUser?.uid) {
+                        const userRef = firebase.database().ref(`users/${AquaticsSystem.auth.currentUser.uid}/aquaticsData`);
+                        const snapshot = await userRef.once('value');
+                        const firebaseData = snapshot.val();
+                        
+                        if (firebaseData && firebaseData.metadata) {
+                            // Merge Firebase data with default structure
+                            AquaticsSystem.data = {
+                                ...AquaticsSystem.data,
+                                ...firebaseData
+                            };
+                            
+                            // Backup to localStorage
+                            localStorage.setItem('cochinAquaticsV2', JSON.stringify(AquaticsSystem.data));
+                            console.log('✅ Firebase data loaded');
+                            UIManager.updateAll();
+                            return true;
+                        }
+                    }
+                    
+                    // Fallback to localStorage
+                    const localData = localStorage.getItem('cochinAquaticsV2');
+                    if (localData) {
+                        const parsed = JSON.parse(localData);
+                        AquaticsSystem.data = {
+                            ...AquaticsSystem.data,
+                            ...parsed
+                        };
+                        console.log('✅ Local data loaded');
+                        UIManager.updateAll();
+                        return true;
+                    }
+                    
+                    // Use default data
+                    console.log('ℹ️ Using default data');
+                    UIManager.updateAll();
+                    return false;
+                    
+                } catch (error) {
+                    console.error('❌ Load failed:', error);
+                    UIManager.updateAll();
+                    return false;
+                }
+            },
+
+            // Export data for backup
+            export() {
+                try {
+                    const dataStr = JSON.stringify(AquaticsSystem.data, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `cochin-aquatics-backup-${new Date().toISOString().split('T')[0]}.json`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    Utils.showSuccess('Data exported successfully!');
+                } catch (error) {
+                    console.error('❌ Export failed:', error);
+                    Utils.showError('Failed to export data.');
+                }
+            },
+
+            // Clear all data
+            async clearAll() {
+                if (confirm('⚠️ This will permanently delete all data. Are you sure?')) {
+                    try {
+                        // Reset to default data
+                        AquaticsSystem.data = {
+                            transactions: [],
+                            expenses: [],
+                            ponds: [],
+                            fishTypes: ['Gold Fish', 'Angel Fish', 'Carp'],
+                            people: [],
+                            settings: {
+                                currency: 'INR',
+                                businessName: 'Cochin Aquatics',
+                                currentPeriod: 'today'
+                            },
+                            metadata: {
+                                nextTransactionId: 1,
+                                nextExpenseId: 1,
+                                nextPondId: 1,
+                                lastSyncTime: null,
+                                version: '2.0'
+                            }
+                        };
+                        
+                        await DataManager.save();
+                        Utils.showSuccess('All data cleared successfully!');
+                    } catch (error) {
+                        console.error('❌ Clear failed:', error);
+                        Utils.showError('Failed to clear data.');
+                    }
+                }
+            }
+        };
+
+        // ===== BUSINESS LOGIC =====
+        const BusinessLogic = {
+            // Add transaction
+            async addTransaction(transaction) {
+                try {
+                    const newTransaction = {
+                        id: AquaticsSystem.data.metadata.nextTransactionId++,
+                        timestamp: new Date().toISOString(),
+                        ...transaction
+                    };
+                    
+                    AquaticsSystem.data.transactions.push(newTransaction);
+                    console.log(`✅ Added transaction: ${transaction.type} - ${Utils.formatCurrency(transaction.amount)}`);
+                    
+                    return await DataManager.save();
+                } catch (error) {
+                    console.error('❌ Add transaction failed:', error);
+                    Utils.showError('Failed to add transaction.');
+                    return false;
+                }
+            },
+
+            // Add fish type
+            async addFishType(fishType) {
+                try {
+                    const trimmed = fishType.trim();
+                    if (trimmed && !AquaticsSystem.data.fishTypes.includes(trimmed)) {
+                        AquaticsSystem.data.fishTypes.push(trimmed);
+                        console.log(`✅ Added fish type: ${trimmed}`);
+                        return await DataManager.save();
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('❌ Add fish type failed:', error);
+                    return false;
+                }
+            },
+
+            // Remove fish type
+            async removeFishType(fishType) {
+                try {
+                    AquaticsSystem.data.fishTypes = AquaticsSystem.data.fishTypes.filter(f => f !== fishType);
+                    console.log(`🗑️ Removed fish type: ${fishType}`);
+                    return await DataManager.save();
+                } catch (error) {
+                    console.error('❌ Remove fish type failed:', error);
+                    return false;
+                }
+            },
+
+            // Add person
+            async addPerson(person) {
+                try {
+                    const trimmed = person.name.trim();
+                    if (trimmed && !AquaticsSystem.data.people.find(p => p.name === trimmed)) {
+                        AquaticsSystem.data.people.push({
+                            ...person,
+                            name: trimmed
+                        });
+                        console.log(`✅ Added person: ${trimmed}`);
+                        return await DataManager.save();
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('❌ Add person failed:', error);
+                    return false;
+                }
+            },
+
+            // Remove person
+            async removePerson(name) {
+                try {
+                    AquaticsSystem.data.people = AquaticsSystem.data.people.filter(p => p.name !== name);
+                    console.log(`🗑️ Removed person: ${name}`);
+                    return await DataManager.save();
+                } catch (error) {
+                    console.error('❌ Remove person failed:', error);
+                    return false;
+                }
+            },
+
+            // Add pond
+            async addPond(pond) {
+                try {
+                    const newPond = {
+                        id: AquaticsSystem.data.metadata.nextPondId++,
+                        status: 'active',
+                        ...pond
+                    };
+                    
+                    AquaticsSystem.data.ponds.push(newPond);
+                    console.log(`✅ Added pond: ${pond.name}`);
+                    return await DataManager.save();
+                } catch (error) {
+                    console.error('❌ Add pond failed:', error);
+                    return false;
+                }
+            },
+
+            // Remove pond
+            async removePond(pondId) {
+                try {
+                    AquaticsSystem.data.ponds = AquaticsSystem.data.ponds.filter(p => p.id !== pondId);
+                    console.log(`🗑️ Removed pond: ${pondId}`);
+                    return await DataManager.save();
+                } catch (error) {
+                    console.error('❌ Remove pond failed:', error);
+                    return false;
+                }
+            },
+
+            // Calculate financial summary
+            calculateFinancials(period = 'today') {
+                const { startDate, endDate } = Utils.getDateRange(period);
+                let totalIncome = 0;
+                let totalExpense = 0;
+                
+                // Calculate from transactions
+                AquaticsSystem.data.transactions.forEach(t => {
+                    if (t && t.date) {
+                        const tDate = new Date(t.date);
+                        if (tDate >= startDate && tDate < endDate) {
+                            const amount = Utils.toNumber(t.amount);
+                            if (t.type === 'sale') {
+                                totalIncome += amount;
+                            } else if (t.type === 'purchase' || t.type === 'expense') {
+                                totalExpense += amount;
+                            }
+                        }
+                    }
+                });
+                
+                const profit = totalIncome - totalExpense;
+                
+                return {
+                    income: totalIncome,
+                    expense: totalExpense,
+                    profit: profit
+                };
+            }
+        };
+
+        // ===== UI MANAGEMENT =====
+        const UIManager = {
+            // Update all UI components
+            updateAll() {
+                try {
+                    this.updateDashboard();
+                    this.updateDropdowns();
+                    this.updateLists();
+                    this.updateReports();
+                } catch (error) {
+                    console.error('❌ UI update failed:', error);
+                }
+            },
+
+            // Update dashboard
+            updateDashboard() {
+                try {
+                    const period = AquaticsSystem.data.settings.currentPeriod;
+                    const financials = BusinessLogic.calculateFinancials(period);
+                    
+                    // Update period labels
+                    const periodText = period === 'today' ? "Today's" : 
+                                      period === 'week' ? "This Week's" : 
+                                      period === 'month' ? "This Month's" : "This Year's";
+                    
+                    const elements = {
+                        periodLabel: document.getElementById('periodLabel'),
+                        periodLabelExpense: document.getElementById('periodLabelExpense'),
+                        periodLabelProfit: document.getElementById('periodLabelProfit'),
+                        totalIncome: document.getElementById('totalIncome'),
+                        totalExpense: document.getElementById('totalExpense'),
+                        totalProfit: document.getElementById('totalProfit'),
+                        activePonds: document.getElementById('activePonds')
+                    };
+                    
+                    // Safe updates
+                    if (elements.periodLabel) elements.periodLabel.textContent = periodText;
+                    if (elements.periodLabelExpense) elements.periodLabelExpense.textContent = periodText;
+                    if (elements.periodLabelProfit) elements.periodLabelProfit.textContent = periodText;
+                    if (elements.totalIncome) elements.totalIncome.textContent = Utils.formatCurrency(financials.income);
+                    if (elements.totalExpense) elements.totalExpense.textContent = Utils.formatCurrency(financials.expense);
+                    if (elements.totalProfit) elements.totalProfit.textContent = Utils.formatCurrency(financials.profit);
+                    if (elements.activePonds) elements.activePonds.textContent = AquaticsSystem.data.ponds.length;
+                    
+                    this.updateTransactionsList();
+                    
+                } catch (error) {
+                    console.error('❌ Dashboard update failed:', error);
+                }
+            },
+
+            // Update transactions list
+            updateTransactionsList() {
+                try {
+                    const containers = ['recentTransactions', 'allTransactions'];
+                    
+                    containers.forEach(containerId => {
+                        const container = document.getElementById(containerId);
+                        if (!container) return;
+                        
+                        const transactions = AquaticsSystem.data.transactions || [];
+                        const isRecent = containerId === 'recentTransactions';
+                        const displayTransactions = isRecent ? transactions.slice(-10).reverse() : transactions.slice().reverse();
+                        
+                        if (displayTransactions.length === 0) {
+                            container.innerHTML = `
+                                <div class="empty-state">
+                                    <div class="icon">📋</div>
+                                    <h3>No transactions yet</h3>
+                                    <p>Start by adding your first transaction!</p>
+                                </div>
+                            `;
+                            return;
+                        }
+                        
+                        container.innerHTML = displayTransactions.map(transaction => {
+                            const amount = Utils.toNumber(transaction.amount);
+                            const description = Utils.toString(transaction.description) || 'Transaction';
+                            const type = Utils.toString(transaction.type) || 'unknown';
+                            const date = Utils.formatDate(transaction.date);
+                            const person = Utils.toString(transaction.person) || '';
+                            
+                            return `
+                                <div class="transaction-item">
+                                    <div>
+                                        <strong>${description}</strong>
+                                        ${person ? `<br><small>👤 ${person}</small>` : ''}
+                                        <br><small>📅 ${date}</small>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <span class="transaction-type type-${type}">${type}</span>
+                                        <br><strong>${Utils.formatCurrency(amount)}</strong>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Transactions list update failed:', error);
+                }
+            },
+
+            // Update dropdown options
+            updateDropdowns() {
+                try {
+                    // Fish type dropdowns
+                    const fishSelects = ['transactionFishType', 'newPondFishType'];
+                    fishSelects.forEach(id => {
+                        const select = document.getElementById(id);
+                        if (select) {
+                            select.innerHTML = `<option value="">Select fish type</option>` +
+                                AquaticsSystem.data.fishTypes.map(f => `<option value="${f}">${f}</option>`).join('');
+                        }
+                    });
+                    
+                    // People dropdown
+                    const personSelect = document.getElementById('transactionPerson');
+                    if (personSelect) {
+                        personSelect.innerHTML = `<option value="">Select person</option>` +
+                            AquaticsSystem.data.people.map(p => `<option value="${p.name}">${p.name} (${p.type})</option>`).join('');
+                    }
+                } catch (error) {
+                    console.error('❌ Dropdowns update failed:', error);
+                }
+            },
+
+            // Update all lists
+            updateLists() {
+                try {
+                    // Fish types list
+                    const fishTypesList = document.getElementById('fishTypesList');
+                    if (fishTypesList) {
+                        if (AquaticsSystem.data.fishTypes.length === 0) {
+                            fishTypesList.innerHTML = '<div class="empty-state"><p>No fish types added yet.</p></div>';
+                        } else {
+                            fishTypesList.innerHTML = AquaticsSystem.data.fishTypes.map(f => `
+                                <div class="list-item">
+                                    <span>🐟 ${f}</span>
+                                    <button class="btn btn-danger" onclick="removeFishType('${f}')">Remove</button>
+                                </div>
+                            `).join('');
+                        }
+                    }
+                    
+                    // People list
+                    const peopleList = document.getElementById('peopleList');
+                    if (peopleList) {
+                        if (AquaticsSystem.data.people.length === 0) {
+                            peopleList.innerHTML = '<div class="empty-state"><p>No people added yet.</p></div>';
+                        } else {
+                            peopleList.innerHTML = AquaticsSystem.data.people.map(p => `
+                                <div class="list-item">
+                                    <span>👤 ${p.name} <small>(${p.type})</small></span>
+                                    <button class="btn btn-danger" onclick="removePerson('${p.name}')">Remove</button>
+                                </div>
+                            `).join('');
+                        }
+                    }
+                    
+                    // Ponds list
+                    const pondsList = document.getElementById('pondsList');
+                    if (pondsList) {
+                        if (AquaticsSystem.data.ponds.length === 0) {
+                            pondsList.innerHTML = '<div class="empty-state"><p>No ponds added yet.</p></div>';
+                        } else {
+                            pondsList.innerHTML = AquaticsSystem.data.ponds.map(p => `
+                                <div class="list-item">
+                                    <span>🏊 ${p.name} <small>(${p.capacity}L, ${p.primaryFishType || 'No fish type'})</small></span>
+                                    <button class="btn btn-danger" onclick="removePond(${p.id})">Remove</button>
+                                </div>
+                            `).join('');
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Lists update failed:', error);
+                }
+            },
+
+            // Update reports
+            updateReports() {
+                try {
+                    const totalTransactionsEl = document.getElementById('totalTransactions');
+                    const totalFishTypesEl = document.getElementById('totalFishTypes');
+                    const totalCustomersEl = document.getElementById('totalCustomers');
+                    
+                    if (totalTransactionsEl) totalTransactionsEl.textContent = AquaticsSystem.data.transactions.length;
+                    if (totalFishTypesEl) totalFishTypesEl.textContent = AquaticsSystem.data.fishTypes.length;
+                    if (totalCustomersEl) totalCustomersEl.textContent = AquaticsSystem.data.people.length;
+                } catch (error) {
+                    console.error('❌ Reports update failed:', error);
+                }
+            }
+        };
+
+        // ===== AUTHENTICATION =====
+        const AuthManager = {
+            // Initialize authentication
+            init() {
+                try {
+                    console.log('🔐 Initializing authentication...');
+                    
+                    firebase.auth().onAuthStateChanged(async (user) => {
+                        const authContainer = document.getElementById('authContainer');
+                        const appContainer = document.getElementById('appContainer');
+                        const userEmailElement = document.getElementById('userEmail');
+                        
+                        if (user) {
+                            console.log(`✅ User authenticated: ${user.email}`);
+                            AquaticsSystem.auth.currentUser = user;
+                            AquaticsSystem.auth.isAuthenticated = true;
+                            
+                            if (authContainer) authContainer.style.display = 'none';
+                            if (appContainer) appContainer.style.display = 'block';
+                            if (userEmailElement) userEmailElement.textContent = user.email;
+                            
+                            // Load user data
+                            await DataManager.load();
+                            
+                        } else {
+                            console.log('❌ User not authenticated');
+                            AquaticsSystem.auth.currentUser = null;
+                            AquaticsSystem.auth.isAuthenticated = false;
+                            
+                            if (authContainer) authContainer.style.display = 'block';
+                            if (appContainer) appContainer.style.display = 'none';
+                            
+                            // Load default/local data
+                            await DataManager.load();
+                        }
+                    });
+                    
+                    this.setupAuthForm();
+                    
+                } catch (error) {
+                    console.error('❌ Auth initialization failed:', error);
+                    Utils.showError('Authentication system failed to initialize.');
+                }
+            },
+
+            // Setup authentication form
+            setupAuthForm() {
+                try {
+                    let isSignUp = false;
+                    
+                    const authSubmit = document.getElementById('authSubmit');
+                    const toggleAuth = document.getElementById('toggleAuth');
+                    const authLoading = document.getElementById('authLoading');
+                    
+                    if (toggleAuth) {
+                        toggleAuth.onclick = () => {
+                            isSignUp = !isSignUp;
+                            if (authSubmit) {
+                                authSubmit.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+                            }
+                            toggleAuth.innerHTML = isSignUp ? 
+                                'Already have an account? <span>Sign In</span>' :
+                                "Don't have an account? <span>Sign Up</span>";
+                        };
+                    }
+                    
+                    if (authSubmit) {
+                        authSubmit.onclick = async () => {
+                            const email = document.getElementById('authEmail')?.value;
+                            const password = document.getElementById('authPassword')?.value;
+                            
+                            if (!email || !password) {
+                                Utils.showError('Please enter both email and password');
+                                return;
+                            }
+                            
+                            if (authLoading) authLoading.style.display = 'block';
+                            
+                            try {
+                                if (isSignUp) {
+                                    await firebase.auth().createUserWithEmailAndPassword(email, password);
+                                    console.log('✅ Sign up successful');
+                                    Utils.showSuccess('Account created successfully!');
+                                } else {
+                                    await firebase.auth().signInWithEmailAndPassword(email, password);
+                                    console.log('✅ Sign in successful');
+                                    Utils.showSuccess('Signed in successfully!');
+                                }
+                            } catch (error) {
+                                console.error('❌ Auth error:', error);
+                                Utils.showError('Authentication error: ' + error.message);
+                            } finally {
+                                if (authLoading) authLoading.style.display = 'none';
+                            }
+                        };
+                    }
+                    
+                    const logoutBtn = document.getElementById('logoutBtn');
+                    if (logoutBtn) {
+                        logoutBtn.onclick = async () => {
+                            try {
+                                await firebase.auth().signOut();
+                                console.log('✅ Logout successful');
+                                Utils.showSuccess('Logged out successfully!');
+                            } catch (error) {
+                                console.error('❌ Logout error:', error);
+                                Utils.showError('Logout failed. Please try again.');
+                            }
+                        };
+                    }
+                } catch (error) {
+                    console.error('❌ Auth form setup failed:', error);
+                }
+            }
+        };
+
+        // ===== GLOBAL FUNCTIONS (for onclick handlers) =====
+        
+        // Quick transaction
+        async function addQuickTransaction() {
+            const type = document.getElementById('quickType')?.value;
+            const amount = Utils.toNumber(document.getElementById('quickAmount')?.value);
+            const description = document.getElementById('quickDescription')?.value;
+            
+            if (!amount || amount <= 0) {
+                Utils.showError('Please enter a valid amount!');
+                return;
+            }
+            
+            const transaction = {
+                date: new Date().toISOString().split('T')[0],
+                type: type,
+                amount: amount,
+                description: description || `${type} transaction`,
+                person: '',
+                fishType: '',
+                quantity: 0
+            };
+            
+            const success = await BusinessLogic.addTransaction(transaction);
+            if (success) {
+                document.getElementById('quickAmount').value = '';
+                document.getElementById('quickDescription').value = '';
+                Utils.showSuccess(`${type} transaction added successfully!`);
+            }
+        }
+
+        // Detailed transaction
+        async function addDetailedTransaction() {
+            const date = document.getElementById('transactionDate')?.value;
+            const type = document.getElementById('transactionType')?.value;
+            const person = document.getElementById('transactionPerson')?.value;
+            const amount = Utils.toNumber(document.getElementById('transactionAmount')?.value);
+            const fishType = document.getElementById('transactionFishType')?.value;
+            const quantity = Utils.toNumber(document.getElementById('transactionQuantity')?.value);
+            const description = document.getElementById('transactionDescription')?.value;
+            
+            if (!date || !amount || amount <= 0) {
+                Utils.showError('Please fill in all required fields with valid values!');
+                return;
+            }
+            
+            const transaction = {
+                date: date,
+                type: type,
+                person: person,
+                amount: amount,
+                fishType: fishType,
+                quantity: quantity,
+                description: description || `${type} transaction`
+            };
+            
+            const success = await BusinessLogic.addTransaction(transaction);
+            if (success) {
+                // Clear form
+                ['transactionDate', 'transactionAmount', 'transactionQuantity', 'transactionDescription'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+                ['transactionPerson', 'transactionFishType'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.selectedIndex = 0;
+                });
+                
+                Utils.showSuccess('Detailed transaction added successfully!');
+            }
+        }
+
+        // Fish type management
+        async function addFishType() {
+            const input = document.getElementById('newFishType');
+            const fishType = input?.value?.trim();
+            
+            if (!fishType) {
+                Utils.showError('Please enter a fish type name!');
+                return;
+            }
+            
+            const success = await BusinessLogic.addFishType(fishType);
+            if (success) {
+                input.value = '';
+                Utils.showSuccess(`Fish type "${fishType}" added successfully!`);
+            } else {
+                Utils.showError('Fish type already exists or invalid name!');
+            }
+        }
+
+        async function removeFishType(fishType) {
+            if (confirm(`Remove fish type "${fishType}"?`)) {
+                const success = await BusinessLogic.removeFishType(fishType);
+                if (success) {
+                    Utils.showSuccess(`Fish type "${fishType}" removed successfully!`);
+                }
+            }
+        }
+
+        // People management
+        async function addPerson() {
+            const nameInput = document.getElementById('newPersonName');
+            const typeSelect = document.getElementById('personType');
+            const name = nameInput?.value?.trim();
+            const type = typeSelect?.value;
+            
+            if (!name) {
+                Utils.showError('Please enter a person name!');
+                return;
+            }
+            
+            const person = {
+                name: name,
+                type: type,
+                contact: '',
+                address: ''
+            };
+            
+            const success = await BusinessLogic.addPerson(person);
+            if (success) {
+                nameInput.value = '';
+                Utils.showSuccess(`Person "${name}" added successfully!`);
+            } else {
+                Utils.showError('Person already exists or invalid name!');
+            }
+        }
+
+        async function removePerson(name) {
+            if (confirm(`Remove person "${name}"?`)) {
+                const success = await BusinessLogic.removePerson(name);
+                if (success) {
+                    Utils.showSuccess(`Person "${name}" removed successfully!`);
+                }
+            }
+        }
+
+        // Pond management
+        async function addPond() {
+            const nameInput = document.getElementById('newPondName');
+            const capacityInput = document.getElementById('newPondCapacity');
+            const fishTypeSelect = document.getElementById('newPondFishType');
+            
+            const name = nameInput?.value?.trim();
+            const capacity = Utils.toNumber(capacityInput?.value);
+            const fishType = fishTypeSelect?.value;
+            
+            if (!name) {
+                Utils.showError('Please enter a pond name!');
+                return;
+            }
+            
+            const pond = {
+                name: name,
+                capacity: capacity,
+                primaryFishType: fishType
+            };
+            
+            const success = await BusinessLogic.addPond(pond);
+            if (success) {
+                nameInput.value = '';
+                capacityInput.value = '';
+                fishTypeSelect.selectedIndex = 0;
+                Utils.showSuccess(`Pond "${name}" added successfully!`);
+            }
+        }
+
+        async function removePond(pondId) {
+            if (confirm('Remove this pond?')) {
+                const success = await BusinessLogic.removePond(pondId);
+                if (success) {
+                    Utils.showSuccess('Pond removed successfully!');
+                }
+            }
+        }
+
+        // Period management
+        function changePeriod(period, btn) {
+            try {
+                AquaticsSystem.data.settings.currentPeriod = period;
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                if (btn) btn.classList.add('active');
+                UIManager.updateDashboard();
+            } catch (error) {
+                console.error('❌ Period change failed:', error);
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            try {
+                AquaticsSystem.ui.currentTab = tabName;
+                
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                const selectedContent = document.getElementById(tabName);
+                if (selectedContent) {
+                    selectedContent.classList.add('active');
+                }
+                
+                const selectedTab = document.querySelector(`[data-tab="${tabName}"]`);
+                if (selectedTab) {
+                    selectedTab.classList.add('active');
+                }
+                
+                // Update relevant UI components
+                if (tabName === 'dashboard') {
+                    UIManager.updateDashboard();
+                } else if (tabName === 'transactions') {
+                    UIManager.updateTransactionsList();
+                } else if (tabName === 'settings') {
+                    UIManager.updateLists();
+                    UIManager.updateDropdowns();
+                } else if (tabName === 'reports') {
+                    UIManager.updateReports();
+                }
+                
+            } catch (error) {
+                console.error('❌ Tab switch failed:', error);
+            }
+        }
+
+        // Data management
+        async function exportData() {
+            DataManager.export();
+        }
+
+        async function syncData() {
+            const success = await DataManager.save();
+            if (success) {
+                Utils.showSuccess('Data synchronized with Firebase successfully!');
+            } else {
+                Utils.showError('Failed to synchronize data.');
+            }
+        }
+
+        async function clearAllData() {
+            await DataManager.clearAll();
+        }
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Cochin Aquatics System v2.0 - Starting initialization...');
+            
+            try {
+                // Set today's date as default
+                const today = new Date().toISOString().split('T')[0];
+                const dateInput = document.getElementById('transactionDate');
+                if (dateInput) {
+                    dateInput.value = today;
+                }
+                
+                // Initialize Firebase authentication
+                if (typeof firebase !== 'undefined') {
+                    AuthManager.init();
+                    console.log('✅ Firebase authentication initialized');
+                } else {
+                    console.error('❌ Firebase not loaded');
+                    Utils.showError('Firebase not loaded. Please check your connection.');
+                }
+                
+                // Setup tab switching
+                document.querySelectorAll('.tab').forEach(tab => {
+                    const tabName = tab.getAttribute('data-tab');
+                    if (tabName) {
+                        tab.addEventListener('click', () => switchTab(tabName));
+                    }
+                });
+                
+                // Initialize UI
+                UIManager.updateAll();
+                
+                console.log('✅ System initialization complete');
+                
+            } catch (error) {
+                console.error('❌ Initialization failed:', error);
+                Utils.showError('System initialization failed. Please refresh the page.');
+            }
+        });
+
+        // Make functions globally available
+        window.addQuickTransaction = addQuickTransaction;
+        window.addDetailedTransaction = addDetailedTransaction;
+        window.addFishType = addFishType;
+        window.removeFishType = removeFishType;
+        window.addPerson = addPerson;
+        window.removePerson = removePerson;
+        window.addPond = addPond;
+        window.removePond = removePond;
+        window.changePeriod = changePeriod;
+        window.switchTab = switchTab;
+        window.exportData = exportData;
+        window.syncData = syncData;
+        window.clearAllData = clearAllData;
+
+        console.log('🎉 Cochin Aquatics Management System v2.0 - Fully Loaded!');
+    </script>
+</body>
+</html>
+
+===============================
+END OF COMPLETE PRODUCTION-READY CODE
+===============================
