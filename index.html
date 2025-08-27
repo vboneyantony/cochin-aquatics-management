@@ -323,7 +323,7 @@
                     </div>
                     <div>
                         <span class="transaction-type type-${item.type}">${item.type}</span>
-                        <strong>₹${item.amount.toLocaleString('en-IN')}</strong>
+                        <strong>₹${(item.amount || item.totalAmount || 0).toLocaleString('en-IN')}</strong>
                     </div>
                 </div>
             `).join('');
