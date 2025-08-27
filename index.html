@@ -430,5 +430,160 @@
         }
     </style>
 </head>
+<body>
+    <!-- Authentication Container -->
+    <div id="authContainer" class="auth-container">
+        <h2 class="auth-title">🐟 Cochin Aquatics</h2>
+        <p class="auth-subtitle">Sign in to access your business management system</p>
+        <div id="authForm" class="auth-form">
+            <input type="email" id="authEmail" class="auth-input" placeholder="Email Address" required>
+            <input type="password" id="authPassword" class="auth-input" placeholder="Password" required>
+            <button id="authSubmit" class="auth-btn">Sign In</button>
+            <div class="auth-toggle" id="toggleAuth">
+                Don't have an account? <span>Sign Up</span>
+            </div>
+        </div>
+        <div id="authError" style="color: #dc3545; margin-top: 15px; display: none; padding: 10px; background: #f8d7da; border-radius: 5px;"></div>
+        <div id="authLoading" style="display: none; margin-top: 15px; color: #1e3c72;">
+            <div class="loading-spinner"></div> Please wait...
+        </div>
+    </div>
 
-    
+    <!-- Main Application Container -->
+    <div id="appContainer" class="container" style="display: none;">
+        <div class="header">
+            <div class="user-info" id="userInfo">
+                👤 <span id="userEmail"></span>
+            </div>
+            <button id="logoutBtn" class="logout-btn">🚪 Logout</button>
+            <h1>🐟 Cochin Aquatics Management System</h1>
+            <div class="subtitle">Multi-User • Real-Time • Cloud-Powered</div>
+            <div class="version-badge">v2.0</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab" data-tab="settings">⚙️ Settings</button>
+        </div>
+
+        <div class="content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <h2 style="margin-bottom: 20px; color: #2c3e50;">Financial Overview</h2>
+                
+                <div class="period-selector">
+                    <button class="period-btn active" onclick="changeDashboardPeriod('today', this)">Today</button>
+                    <button class="period-btn" onclick="changeDashboardPeriod('week', this)">This Week</button>
+                    <button class="period-btn" onclick="changeDashboardPeriod('month', this)">This Month</button>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <h3>💰 <span id="periodLabel">Today's</span> Income</h3>
+                        <div class="value" id="periodIncome">₹0</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <h3>💸 <span id="periodLabelExpense">Today's</span> Expense</h3>
+                        <div class="value" id="periodExpense">₹0</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <h3>📈 <span id="periodLabelProfit">Today's</span> Profit</h3>
+                        <div class="value" id="periodProfit">₹0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>🐟 Active Ponds</h3>
+                        <div class="value" id="activePonds">0</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 30px 0 15px; color: #2c3e50;">Recent Transactions</h3>
+                <div class="transaction-list" id="recentTransactions">
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <p>No transactions yet. Start by adding a new transaction!</p>
+                    </div>
+                </div>
+
+                <!-- Simple Add Transaction Form -->
+                <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">Quick Add Transaction</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="quickTransactionType">
+                                <option value="sale">💰 Sale</option>
+                                <option value="purchase">🛒 Purchase</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="quickAmount" placeholder="Enter amount">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="quickDescription" placeholder="Brief description">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addQuickTransaction()">💾 Add Transaction</button>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <h2 style="margin-bottom: 20px; color: #2c3e50;">Settings & Configuration</h2>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">🐟 Manage Fish Types</h3>
+                    <div class="form-group">
+                        <label>Add New Fish Type</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="newFishType" placeholder="Enter fish name">
+                            <button class="btn btn-success" onclick="addFishType()">Add</button>
+                        </div>
+                    </div>
+                    <div id="fishTypesList" style="margin-top: 15px;">
+                        <!-- Fish types will be listed here -->
+                    </div>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">👥 Manage Customers & Vendors</h3>
+                    <div class="form-group">
+                        <label>Add New Person</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="newPersonInput" placeholder="Enter name">
+                            <select id="personType">
+                                <option value="customer">Customer</option>
+                                <option value="vendor">Vendor</option>
+                                <option value="both">Both</option>
+                            </select>
+                            <button class="btn btn-success" onclick="addPerson()">Add</button>
+                        </div>
+                    </div>
+                    <div id="peopleList" style="margin-top: 15px;">
+                        <!-- People will be listed here -->
+                    </div>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">🏊 Manage Ponds</h3>
+                    <div class="form-group">
+                        <label>Add New Pond</label>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr 2fr 1fr; gap: 10px;">
+                            <input type="text" id="newPondName" placeholder="Pond name">
+                            <input type="number" id="newPondCapacity" placeholder="Capacity">
+                            <select id="newPondFishType">
+                                <option value="">Fish type</option>
+                            </select>
+                            <button class="btn btn-success" onclick="addPond()">Add</button>
+                        </div>
+                    </div>
+                    <div id="pondsList" style="margin-top: 15px;">
+                        <!-- Ponds will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
