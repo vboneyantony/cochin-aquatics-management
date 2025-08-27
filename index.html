@@ -1040,2584 +1040,742 @@
     </div>
 
     <script>
-        // Initialize data structure with defaults
-        let appData = {
-            transactions: [],
-            expenses: [],
-            ponds: [
-                {id: 1, name: 'Pond 1', capacity: 10000, primaryFishType: 'Gold Fish'},
-                {id: 2, name: 'Pond 2', capacity: 8000, primaryFishType: 'Angel Fish'},
-                {id: 3, name: 'Pond 3', capacity: 12000, primaryFishType: 'Carp'}
-            ],
-            stockAdjustments: [],
-            fishTypes: ['Gold Fish', 'Angel Fish', 'Black Moors', 'Carp', 'Tetra', 'Guppy', 'Koi', 'Molly', 'Platy', 'Swordtail'],
-            expenseCategories: ['Cleaning', 'Feed', 'Medicine', 'Electricity', 'Maintenance', 'Transport', 'Salary', 'Water Treatment', 'Equipment', 'Other'],
-            people: [
-                {name: 'Arjun', type: 'vendor'},
-                {name: 'Ben', type: 'customer'},
-                {name: 'Raj', type: 'both'}
-            ],
-            nextTransactionId: 1,
-            nextExpenseId: 1,
-            nextPondId: 4,
-            nextAdjustmentId: 1,
-            currentDashboardPeriod: 'today',
-            currentReportPeriod: 'month'
-        };
+        <script>
+// ===== COMPLETE UNIFIED DATA MANAGEMENT SYSTEM =====
 
-        let fishEntryCount = 1;
+// Global state management
+let appData = null;
+let currentUser = null;
+let isAuthenticated = false;
+let dataListeners = [];
 
-        // Load data from localStorage on startup
-        function loadData() {
-            const savedData = localStorage.getItem('cochinAquaticsDataV2');
-            if (savedData) {
-                try {
-                    const parsed = JSON.parse(savedData);
-                    appData = { ...getDefaultAppData(), ...parsed };
-                } catch (e) {
-                    console.error('Error loading saved data:', e);
-                    appData = getDefaultAppData();
-                }
-            } else {
-                // Check for old version data
-                const oldData = localStorage.getItem('cochinAquaticsData');
-                if (oldData) {
-                    try {
-                        // Migrate old data
-                        const old = JSON.parse(oldData);
-                        appData = { ...getDefaultAppData(), ...old };
-                    } catch (e) {
-                        console.error('Error migrating old data:', e);
-                    }
-                }
-                
-                // Initialize with default ponds if no saved data
-                if (appData.ponds.length === 0) {
-                    appData.ponds = [
-                        {id: 1, name: 'Pond 1', capacity: 10000, primaryFishType: 'Gold Fish'},
-                        {id: 2, name: 'Pond 2', capacity: 8000, primaryFishType: 'Angel Fish'},
-                        {id: 3, name: 'Pond 3', capacity: 12000, primaryFishType: 'Carp'}
-                    ];
-                    appData.nextPondId = 4;
-                }
-                saveData();
-            }
-            
-            // Initialize date fields after DOM is ready
-            setTimeout(() => {
-                const transactionDateField = document.getElementById('transactionDate');
-                const expenseDateField = document.getElementById('expenseDate');
-                
-                if (transactionDateField) {
-                    transactionDateField.valueAsDate = new Date();
-                }
-                if (expenseDateField) {
-                    expenseDateField.valueAsDate = new Date();
-                }
-                
-                updateAllDisplays();
-            }, 100);
-        }
-        
-        // Get default app data structure
-        function getDefaultAppData() {
-            return {
-                transactions: [],
-                expenses: [],
-                ponds: [
-                    {id: 1, name: 'Pond 1', capacity: 10000, primaryFishType: 'Gold Fish'},
-                    {id: 2, name: 'Pond 2', capacity: 8000, primaryFishType: 'Angel Fish'},
-                    {id: 3, name: 'Pond 3', capacity: 12000, primaryFishType: 'Carp'}
-                ],
-                stockAdjustments: [],
-                fishTypes: ['Gold Fish', 'Angel Fish', 'Black Moors', 'Carp', 'Tetra', 'Guppy', 'Koi', 'Molly', 'Platy', 'Swordtail'],
-                expenseCategories: ['Cleaning', 'Feed', 'Medicine', 'Electricity', 'Maintenance', 'Transport', 'Salary', 'Water Treatment', 'Equipment', 'Other'],
-                people: [
-                    {name: 'Arjun', type: 'vendor'},
-                    {name: 'Ben', type: 'customer'},
-                    {name: 'Raj', type: 'both'}
-                ],
-                nextTransactionId: 1,
-                nextExpenseId: 1,
-                nextPondId: 4,
-                nextAdjustmentId: 1,
-                currentDashboardPeriod: 'today',
-                currentReportPeriod: 'month'
-            };
-        }
+// Default data structure
+function getDefaultAppData() {
+    return {
+        transactions: [],
+        expenses: [],
+        ponds: [
+            {id: 1, name: 'Pond 1', capacity: 10000, primaryFishType: 'Gold Fish'},
+            {id: 2, name: 'Pond 2', capacity: 8000, primaryFishType: 'Angel Fish'},
+            {id: 3, name: 'Pond 3', capacity: 12000, primaryFishType: 'Carp'}
+        ],
+        stockAdjustments: [],
+        fishTypes: ['Gold Fish', 'Angel Fish', 'Black Moors', 'Carp', 'Tetra', 'Guppy', 'Koi', 'Molly', 'Platy', 'Swordtail'],
+        expenseCategories: ['Cleaning', 'Feed', 'Medicine', 'Electricity', 'Maintenance', 'Transport', 'Salary', 'Water Treatment', 'Equipment', 'Other'],
+        people: [
+            {name: 'Arjun', type: 'vendor'},
+            {name: 'Ben', type: 'customer'},
+            {name: 'Raj', type: 'both'}
+        ],
+        nextTransactionId: 1,
+        nextExpenseId: 1,
+        nextPondId: 4,
+        nextAdjustmentId: 1,
+        currentDashboardPeriod: 'today',
+        currentReportPeriod: 'month'
+    };
+}
 
-        // Save data to localStorage
-        function saveData() {
-            try {
-                localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
-                console.log('💾 Data saved successfully');
-                return true;
-            } catch (error) {
-                console.error('❌ Error saving data:', error);
-                if (error.name === 'QuotaExceededError') {
-                    alert('⚠️ Storage is full! Please export your data and clear old records.');
-                } else {
-                    alert('⚠️ Error saving data. Please try again.');
-                }
-                return false;
-            }
-        }
-
-        // Switch tabs
-        function switchTab(tabName) {
-            console.log('🔄 Switching to tab:', tabName);
-            
-            // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Remove active class from all tab buttons
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected tab content
-            const selectedTab = document.getElementById(tabName);
-            if (selectedTab) {
-                selectedTab.classList.add('active');
-                
-                // Find and activate the corresponding tab button using data-tab attribute
-                const tabButton = document.querySelector(`.tab[data-tab="${tabName}"]`);
-                if (tabButton) {
-                    tabButton.classList.add('active');
-                }
-                
-                // Update displays when switching tabs
-                updateAllDisplays();
-            } else {
-                console.error('❌ Tab not found:', tabName);
-            }
-        }
-
-        // Change dashboard period
-        function changeDashboardPeriod(period, btn) {
-            appData.currentDashboardPeriod = period;
-            document.querySelectorAll('#dashboard .period-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            if (btn) btn.classList.add('active');
-            updateDashboard();
-        }
-
-        // Change report period
-        function changeReportPeriod(period, btn) {
-            appData.currentReportPeriod = period;
-            document.querySelectorAll('#reports .period-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            if (btn) btn.classList.add('active');
-            updateReports();
-        }
-
-        // Update all displays
-        function updateAllDisplays() {
-            updateDashboard();
-            updateFishTypeDropdowns();
-            updatePondDropdowns();
-            updatePersonDropdowns();
-            updateExpenseCategoryDropdown();
-            updatePondGrid();
-            updateReports();
-            updateSettingsLists();
-        }
-
-        // Calculate date range based on period
-        function getDateRange(period) {
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            let startDate, endDate;
-            
-            switch(period) {
-                case 'today':
-                    startDate = today;
-                    endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-                    break;
-                case 'week':
-                    const dayOfWeek = today.getDay();
-                    startDate = new Date(today.getTime() - dayOfWeek * 24 * 60 * 60 * 1000);
-                    endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-                    break;
-                case 'month':
-                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-                    break;
-                case 'quarter':
-                    const quarter = Math.floor(now.getMonth() / 3);
-                    startDate = new Date(now.getFullYear(), quarter * 3, 1);
-                    endDate = new Date(now.getFullYear(), quarter * 3 + 3, 1);
-                    break;
-                case 'year':
-                    startDate = new Date(now.getFullYear(), 0, 1);
-                    endDate = new Date(now.getFullYear() + 1, 0, 1);
-                    break;
-            }
-            
-            return { startDate, endDate };
-        }
-
-        // Update dashboard
-        function updateDashboard() {
-            const { startDate, endDate } = getDateRange(appData.currentDashboardPeriod);
-            
-            // Calculate totals
-            let income = 0;
-            let expense = 0;
-            
-            appData.transactions.forEach(t => {
-                const tDate = new Date(t.date);
-                if (tDate >= startDate && tDate < endDate) {
-                    if (t.type === 'sale') {
-                        income += t.totalAmount;
-                    } else if (t.type === 'purchase') {
-                        expense += t.totalAmount;
-                    } else if (t.type === 'trading') {
-                        income += t.totalAmount;
-                        expense += t.totalCost || 0;
-                    }
-                }
-            });
-            
-            appData.expenses.forEach(e => {
-                const eDate = new Date(e.date);
-                if (eDate >= startDate && eDate < endDate) {
-                    expense += e.amount;
-                }
-            });
-            
-            const profit = income - expense;
-            
-            // Update labels
-            const periodText = appData.currentDashboardPeriod === 'today' ? "Today's" : 
-                              appData.currentDashboardPeriod === 'week' ? "This Week's" : 
-                              "This Month's";
-            
-            document.getElementById('periodLabel').textContent = periodText;
-            document.getElementById('periodLabelExpense').textContent = periodText;
-            document.getElementById('periodLabelProfit').textContent = periodText;
-            
-            // Update values
-            document.getElementById('periodIncome').textContent = `₹${income.toLocaleString('en-IN')}`;
-            document.getElementById('periodExpense').textContent = `₹${expense.toLocaleString('en-IN')}`;
-            document.getElementById('periodProfit').textContent = `₹${profit.toLocaleString('en-IN')}`;
-            document.getElementById('activePonds').textContent = appData.ponds.length;
-            
-            // Update recent transactions
-            updateRecentTransactions();
-        }
-
-        // Update recent transactions list
-        function updateRecentTransactions() {
-            const container = document.getElementById('recentTransactions');
-            const allItems = [
-                ...appData.transactions.map(t => ({...t, category: 'transaction'})),
-                ...appData.expenses.map(e => ({...e, category: 'expense'}))
-            ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
-            
-            if (allItems.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">📋</div>
-                        <p>No transactions yet. Start by adding a new transaction!</p>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = allItems.map(item => {
-                    if (item.category === 'transaction') {
-                        let profitText = '';
-                        if (item.type === 'trading' && item.totalCost) {
-                            const profit = item.totalAmount - item.totalCost;
-                            profitText = `<br><small style="color: ${profit >= 0 ? 'green' : 'red'}">Profit: ₹${profit.toLocaleString('en-IN')}</small>`;
-                        }
-                        return `
-                            <div class="transaction-item">
-                                <div>
-                                    <strong>${item.personName || 'Unknown'}</strong><br>
-                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
-                                    ${profitText}
-                                </div>
-                                <div>
-                                    <span class="transaction-type type-${item.type}">${item.type}</span>
-                                    <strong>₹${item.totalAmount.toLocaleString('en-IN')}</strong>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="transaction-item">
-                                <div>
-                                    <strong>${item.category}: ${item.description || item.employeeName || ''}</strong><br>
-                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
-                                </div>
-                                <div>
-                                    <span class="transaction-type type-expense">expense</span>
-                                    <strong>₹${item.amount.toLocaleString('en-IN')}</strong>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }).join('');
-            }
-        }
-
-        // Calculate totals in real-time
-        function calculateTotals() {
-            let total = 0;
-            let totalCost = 0;
-            const transactionType = document.getElementById('transactionType').value;
-            
-            document.querySelectorAll('.fish-entry').forEach(entry => {
-                const quantity = parseFloat(entry.querySelector('.fish-quantity').value) || 0;
-                const rate = parseFloat(entry.querySelector('.fish-rate').value) || 0;
-                const buyRate = parseFloat(entry.querySelector('.fish-buy-rate')?.value) || 0;
-                
-                const amount = quantity * rate;
-                total += amount;
-                
-                if (transactionType === 'trading' && buyRate > 0) {
-                    totalCost += quantity * buyRate;
-                }
-            });
-            
-            document.getElementById('totalAmount').textContent = total.toLocaleString('en-IN');
-            
-            if (transactionType === 'trading' && totalCost > 0) {
-                const profit = total - totalCost;
-                document.getElementById('totalAmount').textContent = 
-                    `${total.toLocaleString('en-IN')} (Profit: ₹${profit.toLocaleString('en-IN')})`;
-            }
-        }
-
-        // Add pond distribution
-        function addPondDistribution(entryNum) {
-            const container = document.getElementById(`pondDist${entryNum}`);
-            const newDist = document.createElement('div');
-            newDist.className = 'pond-distribution-item';
-            newDist.innerHTML = `
-                <select class="pond-select">
-                    <option value="">Select Pond</option>
-                    ${appData.ponds.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                </select>
-                <input type="number" class="pond-quantity" placeholder="Quantity">
-                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
-            `;
-            container.appendChild(newDist);
-        }
-
-        // Add fish entry
-        function addFishEntry() {
-            fishEntryCount++;
-            const container = document.getElementById('fishEntries');
-            const transactionType = document.getElementById('transactionType').value;
-            
-            const newEntry = document.createElement('div');
-            newEntry.className = 'fish-entry';
-            newEntry.innerHTML = `
-                <h4>
-                    <span><span class="fish-icon">🐟</span> Fish Details #${fishEntryCount}</span>
-                    <button class="remove-btn" onclick="removeFishEntry(this)">Remove</button>
-                </h4>
-                <div class="row">
-                    <div class="form-group">
-                        <label>Fish Type</label>
-                        <select class="fish-type" required onchange="calculateTotals()">
-                            <option value="">Select Fish</option>
-                            ${appData.fishTypes.map(f => `<option value="${f}">${f}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Quantity</label>
-                        <input type="number" class="fish-quantity" placeholder="e.g., 1000" required onchange="calculateTotals()">
-                    </div>
-                    <div class="form-group">
-                        <label class="rate-label">${transactionType === 'trading' ? 'Sell Rate (₹)' : 'Rate per Fish (₹)'}</label>
-                        <input type="number" step="0.01" class="fish-rate" placeholder="e.g., 1.5" required onchange="calculateTotals()">
-                    </div>
-                    ${transactionType === 'trading' ? `
-                    <div class="form-group trading-field">
-                        <label>Buy Rate (₹)</label>
-                        <input type="number" step="0.01" class="fish-buy-rate" placeholder="e.g., 1.2" onchange="calculateTotals()">
-                    </div>` : ''}
-                </div>
-                ${transactionType !== 'trading' ? `
-                <div class="pond-section">
-                    <label class="pond-label">${transactionType === 'sale' ? 'Sold from Pond' : 'Assign to Pond'}</label>
-                    <div class="pond-distribution" id="pondDist${fishEntryCount}">
-                        <div class="pond-distribution-item">
-                            <select class="pond-select">
-                                <option value="">Select Pond</option>
-                                ${appData.ponds.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                            </select>
-                            <input type="number" class="pond-quantity" placeholder="Quantity">
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-sm" onclick="addPondDistribution(${fishEntryCount})" style="padding: 5px 10px; font-size: 12px;">+ Add Another Pond</button>
-                </div>` : ''}
-            `;
-            container.appendChild(newEntry);
-        }
-
-        // Remove fish entry
-        function removeFishEntry(button) {
-            button.closest('.fish-entry').remove();
-            fishEntryCount--;
-            calculateTotals();
-        }
-
-        // Calculate pond stock for a specific fish type
-        function calculatePondStock(pondId, fishType) {
-            let stock = 0;
-            
-            // Add purchases, subtract sales
-            appData.transactions.forEach(t => {
-                t.fishDetails.forEach(f => {
-                    if (f.pondId == pondId && f.type === fishType) {
-                        if (t.type === 'purchase') {
-                            stock += f.quantity;
-                        } else if (t.type === 'sale') {
-                            stock -= f.quantity;
-                        }
-                    }
-                });
-            });
-            
-            // Apply stock adjustments
-            (appData.stockAdjustments || []).forEach(a => {
-                if (a.pondId == pondId && a.fishType === fishType) {
-                    stock += a.quantity;
-                }
-            });
-            
-            return stock;
-        }
-
-        // Update transaction form based on type
-        function updateTransactionForm() {
-            const type = document.getElementById('transactionType').value;
-            const personLabel = document.getElementById('personLabel');
-            
-            if (type === 'purchase') {
-                personLabel.textContent = 'Vendor Name';
-            } else if (type === 'sale') {
-                personLabel.textContent = 'Customer Name';
-            } else if (type === 'trading') {
-                personLabel.textContent = 'Customer Name';
-            }
-            
-            // Update existing fish entries
-            document.querySelectorAll('.fish-entry').forEach((entry, index) => {
-                const rateLabel = entry.querySelector('.rate-label');
-                const pondSection = entry.querySelector('.pond-section');
-                const pondLabel = entry.querySelector('.pond-label');
-                let tradingField = entry.querySelector('.trading-field');
-                
-                if (type === 'trading') {
-                    if (rateLabel) rateLabel.textContent = 'Sell Rate (₹)';
-                    if (pondSection) pondSection.style.display = 'none';
-                    
-                    if (!tradingField) {
-                        const buyRateDiv = document.createElement('div');
-                        buyRateDiv.className = 'form-group trading-field';
-                        buyRateDiv.innerHTML = `
-                            <label>Buy Rate (₹)</label>
-                            <input type="number" step="0.01" class="fish-buy-rate" placeholder="e.g., 1.2" onchange="calculateTotals()">
-                        `;
-                        entry.querySelector('.row').appendChild(buyRateDiv);
-                    } else {
-                        tradingField.style.display = 'block';
-                    }
-                } else {
-                    if (rateLabel) rateLabel.textContent = 'Rate per Fish (₹)';
-                    if (pondSection) pondSection.style.display = 'block';
-                    if (pondLabel) {
-                        pondLabel.textContent = type === 'sale' ? 'Sold from Pond' : 'Assign to Pond';
-                    }
-                    if (tradingField) tradingField.style.display = 'none';
-                }
-            });
-            
-            calculateTotals();
-        }
-
-        // Update expense form based on type
-        function updateExpenseForm() {
-            const type = document.getElementById('expenseType').value;
-            document.getElementById('pondSelectDiv').style.display = type === 'pond' ? 'block' : 'none';
-            document.getElementById('employeeDiv').style.display = type === 'salary' ? 'block' : 'none';
-        }
-
-        // Update expense category dropdown
-        function updateExpenseCategoryDropdown() {
-            const select = document.getElementById('expenseCategory');
-            if (select) {
-                select.innerHTML = `
-                    <option value="">Select Category</option>
-                    ${appData.expenseCategories.map(c => `<option value="${c}">${c}</option>`).join('')}
-                    <option value="__new__">➕ Add New Category</option>
-                `;
-                
-                select.onchange = function() {
-                    document.getElementById('newCategoryDiv').style.display = 
-                        this.value === '__new__' ? 'flex' : 'none';
-                };
-            }
-        }
-
-        // Add new expense category
-        function addNewCategory() {
-            const input = document.getElementById('newCategoryInput');
-            const category = input.value.trim();
-            
-            if (category && !appData.expenseCategories.includes(category)) {
-                appData.expenseCategories.push(category);
-                saveData();
-                input.value = '';
-                document.getElementById('newCategoryDiv').style.display = 'none';
-                updateExpenseCategoryDropdown();
-                document.getElementById('expenseCategory').value = category;
-            }
-        }
-
-        // Handle transaction form submission
-        let isSubmitting = false;
-        document.getElementById('transactionForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Prevent double submission
-            if (isSubmitting) {
-                console.log('⏳ Already processing...');
-                return;
-            }
-            
-            isSubmitting = true;
-            console.log('📝 Processing transaction submission...');
-            
-            try {
-                // Validation flag
-                let hasError = false;
-                let errorMessage = '';
-                
-                const transaction = {
-                    id: appData.nextTransactionId++,
-                    date: document.getElementById('transactionDate').value,
-                    type: document.getElementById('transactionType').value,
-                    personName: document.getElementById('personName').value || document.getElementById('newPersonName').value,
-                    fishDetails: [],
-                    totalAmount: 0,
-                    totalCost: 0,
-                    notes: document.getElementById('transactionNotes').value
-                };
-                
-                console.log('📋 Transaction data:', transaction);
-                
-                // Basic validation
-                if (!transaction.type) {
-                    alert('❌ Please select transaction type!');
-                    isSubmitting = false;
-                    return;
-                }
-                
-                if (!transaction.personName) {
-                    alert('❌ Please enter vendor/customer name!');
-                    isSubmitting = false;
-                    return;
-                }
-                
-                // Collect and validate fish details
-                const fishEntries = document.querySelectorAll('.fish-entry');
-                console.log(`🐟 Processing ${fishEntries.length} fish entries...`);
-                
-                for (let i = 0; i < fishEntries.length; i++) {
-                    const entry = fishEntries[i];
-                    const fishType = entry.querySelector('.fish-type').value;
-                    const totalQuantity = parseFloat(entry.querySelector('.fish-quantity').value) || 0;
-                    const rate = parseFloat(entry.querySelector('.fish-rate').value) || 0;
-                    const buyRate = parseFloat(entry.querySelector('.fish-buy-rate')?.value) || 0;
-                    
-                    if (fishType && totalQuantity && rate) {
-                        if (transaction.type === 'trading') {
-                            // Trading validation
-                            if (buyRate > rate) {
-                                if (!confirm(`⚠️ Warning: Buy rate (₹${buyRate}) is higher than sell rate (₹${rate}). This will result in a loss. Continue?`)) {
-                                    hasError = true;
-                                    break;
-                                }
-                            }
-                            
-                            const fishDetail = {
-                                type: fishType,
-                                quantity: totalQuantity,
-                                rate: rate,
-                                buyRate: buyRate,
-                                amount: totalQuantity * rate,
-                                cost: totalQuantity * buyRate,
-                                profit: (totalQuantity * rate) - (totalQuantity * buyRate)
-                            };
-                            transaction.fishDetails.push(fishDetail);
-                            transaction.totalAmount += fishDetail.amount;
-                            transaction.totalCost += fishDetail.cost;
-                            
-                        } else {
-                            // Purchase and Sale need pond distribution
-                            const pondDistributions = [];
-                            let distributedQuantity = 0;
-                            
-                            entry.querySelectorAll('.pond-distribution-item').forEach(dist => {
-                                const pondId = dist.querySelector('.pond-select').value;
-                                const quantity = parseFloat(dist.querySelector('.pond-quantity').value) || 0;
-                                
-                                if (pondId && quantity > 0) {
-                                    pondDistributions.push({ pondId, quantity });
-                                    distributedQuantity += quantity;
-                                }
-                            });
-                            
-                            // If no distribution, use default pond
-                            if (pondDistributions.length === 0) {
-                                const defaultPond = entry.querySelector('.pond-select').value;
-                                if (defaultPond) {
-                                    pondDistributions.push({ pondId: defaultPond, quantity: totalQuantity });
-                                    distributedQuantity = totalQuantity;
-                                } else if (transaction.type === 'purchase') {
-                                    errorMessage = `❌ Please assign pond for ${fishType}!`;
-                                    hasError = true;
-                                    break;
-                                }
-                            }
-                            
-                            // Validate quantities match
-                            if (distributedQuantity > 0 && Math.abs(distributedQuantity - totalQuantity) > 0.01) {
-                                errorMessage = `❌ Quantity mismatch for ${fishType}!\nTotal: ${totalQuantity}\nDistributed: ${distributedQuantity}`;
-                                hasError = true;
-                                break;
-                            }
-                            
-                            // For sales, validate stock
-                            if (transaction.type === 'sale') {
-                                for (const dist of pondDistributions) {
-                                    const availableStock = calculatePondStock(dist.pondId, fishType);
-                                    if (dist.quantity > availableStock) {
-                                        const pond = appData.ponds.find(p => p.id == dist.pondId);
-                                        errorMessage = `❌ Insufficient stock in ${pond.name}!\n${fishType}: ${dist.quantity} requested, ${availableStock} available`;
-                                        hasError = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (!hasError) {
-                                // Create fish details for each pond
-                                pondDistributions.forEach(dist => {
-                                    const fishDetail = {
-                                        type: fishType,
-                                        quantity: dist.quantity,
-                                        rate: rate,
-                                        pondId: dist.pondId,
-                                        amount: dist.quantity * rate
-                                    };
-                                    transaction.fishDetails.push(fishDetail);
-                                    transaction.totalAmount += fishDetail.amount;
-                                });
-                            }
-                        }
-                    }
-                }
-                
-                // Check for errors
-                if (hasError) {
-                    if (errorMessage) {
-                        alert(errorMessage);
-                    }
-                    isSubmitting = false;
-                    return;
-                }
-                
-                // Ensure we have at least one fish entry
-                if (transaction.fishDetails.length === 0) {
-                    alert('❌ Please add at least one fish entry!');
-                    isSubmitting = false;
-                    return;
-                }
-                
-                // Add new person if entered
-                const newPersonName = document.getElementById('newPersonName').value;
-                if (newPersonName && !appData.people.find(p => p.name === newPersonName)) {
-                    appData.people.push({
-                        name: newPersonName,
-                        type: transaction.type === 'purchase' ? 'vendor' : 'customer'
-                    });
-                }
-                
-                // Save transaction
-                appData.transactions.push(transaction);
-                const saved = saveData();
-                
-                if (saved) {
-                    console.log('✅ Transaction saved successfully!', transaction);
-                    
-                    // Show success message
-                    const successMsg = document.getElementById('transactionSuccess');
-                    successMsg.classList.add('show');
-                    setTimeout(() => successMsg.classList.remove('show'), 3000);
-                    
-                    // Store the selected date
-                    const selectedDate = document.getElementById('transactionDate').value;
-                    
-                    // Reset form
-                    this.reset();
-                    
-                    // Restore the date
-                    document.getElementById('transactionDate').value = selectedDate;
-                    
-                    // Reset fish entries
-                    document.getElementById('fishEntries').innerHTML = `
-                        <div class="fish-entry">
-                            <h4><span><span class="fish-icon">🐟</span> Fish Details #1</span></h4>
-                            <div class="row">
-                                <div class="form-group">
-                                    <label>Fish Type</label>
-                                    <select class="fish-type" required onchange="calculateTotals()">
-                                        <option value="">Select Fish</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Quantity</label>
-                                    <input type="number" class="fish-quantity" placeholder="e.g., 1000" required onchange="calculateTotals()">
-                                </div>
-                                <div class="form-group">
-                                    <label class="rate-label">Rate per Fish (₹)</label>
-                                    <input type="number" step="0.01" class="fish-rate" placeholder="e.g., 1.5" required onchange="calculateTotals()">
-                                </div>
-                            </div>
-                            <div class="pond-section">
-                                <label class="pond-label">Assign to Pond</label>
-                                <div class="pond-distribution" id="pondDist1">
-                                    <div class="pond-distribution-item">
-                                        <select class="pond-select">
-                                            <option value="">Select Pond</option>
-                                        </select>
-                                        <input type="number" class="pond-quantity" placeholder="Quantity">
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-sm" onclick="addPondDistribution(1)" style="padding: 5px 10px; font-size: 12px;">+ Add Another Pond</button>
-                            </div>
-                        </div>
-                    `;
-                    fishEntryCount = 1;
-                    document.getElementById('totalAmount').textContent = '0';
-                    
-                    updateAllDisplays();
-                }
-                
-            } catch (error) {
-                console.error('❌ Error processing transaction:', error);
-                alert('❌ Error saving transaction. Please try again.');
-            } finally {
-                isSubmitting = false;
-            }
-        });
-
-        // Handle expense form submission
-        document.getElementById('expenseForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Validate required fields
-            const expenseType = document.getElementById('expenseType').value;
-            const expenseCategory = document.getElementById('expenseCategory').value;
-            const expenseAmount = document.getElementById('expenseAmount').value;
-            
-            if (!expenseType) {
-                alert('❌ Please select expense type!');
-                return;
-            }
-            
-            if (!expenseCategory || expenseCategory === '__new__') {
-                alert('❌ Please select expense category!');
-                return;
-            }
-            
-            if (!expenseAmount || parseFloat(expenseAmount) <= 0) {
-                alert('❌ Please enter valid amount!');
-                return;
-            }
-            
-            const expense = {
-                id: appData.nextExpenseId++,
-                date: document.getElementById('expenseDate').value || new Date().toISOString().split('T')[0],
-                type: expenseType,
-                category: expenseCategory,
-                amount: parseFloat(expenseAmount),
-                description: document.getElementById('expenseDescription').value,
-                pondId: document.getElementById('expensePond').value,
-                employeeName: document.getElementById('employeeName').value
-            };
-            
-            // Save expense
-            appData.expenses.push(expense);
-            saveData();
-            
-            // Show success message
-            const successMsg = document.getElementById('expenseSuccess');
-            successMsg.classList.add('show');
-            setTimeout(() => successMsg.classList.remove('show'), 3000);
-            
-            // Store the selected date
-            const selectedDate = document.getElementById('expenseDate').value;
-            
-            // Reset form
-            this.reset();
-            
-            // Restore the date
-            document.getElementById('expenseDate').value = selectedDate;
-            
-            // Update displays
-            updateAllDisplays();
-        });
-
-        // Add pond form submission
-        document.getElementById('addPondForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const pond = {
-                id: appData.nextPondId++,
-                name: document.getElementById('pondName').value,
-                capacity: parseFloat(document.getElementById('pondCapacity').value) || 0,
-                primaryFishType: document.getElementById('pondFishType').value
-            };
-            
-            appData.ponds.push(pond);
-            saveData();
-            
-            closeModal('addPondModal');
-            this.reset();
-            updateAllDisplays();
-        });
-
-        // Adjust stock form submission
-        document.getElementById('adjustStockForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const adjustment = {
-                id: appData.nextAdjustmentId++,
-                date: new Date().toISOString(),
-                pondId: document.getElementById('adjustPond').value,
-                type: document.getElementById('adjustmentType').value,
-                fishType: document.getElementById('adjustFishType').value,
-                quantity: parseFloat(document.getElementById('adjustQuantity').value),
-                notes: document.getElementById('adjustNotes').value
-            };
-            
-            appData.stockAdjustments = appData.stockAdjustments || [];
-            appData.stockAdjustments.push(adjustment);
-            saveData();
-            
-            closeModal('adjustStockModal');
-            this.reset();
-            updateAllDisplays();
-        });
-
-        // Load pond stock for adjustment
-        function loadPondStock() {
-            const pondId = document.getElementById('adjustPond').value;
-            if (!pondId) {
-                document.getElementById('currentStockInfo').style.display = 'none';
-                return;
-            }
-            
-            const pond = appData.ponds.find(p => p.id == pondId);
-            const stockByFish = {};
-            
-            // Calculate current stock
-            appData.transactions.forEach(t => {
-                t.fishDetails.forEach(f => {
-                    if (f.pondId == pondId) {
-                        if (!stockByFish[f.type]) stockByFish[f.type] = 0;
-                        
-                        if (t.type === 'purchase') {
-                            stockByFish[f.type] += f.quantity;
-                        } else if (t.type === 'sale') {
-                            stockByFish[f.type] -= f.quantity;
-                        }
-                    }
-                });
-            });
-            
-            // Apply adjustments
-            (appData.stockAdjustments || []).forEach(a => {
-                if (a.pondId == pondId) {
-                    if (!stockByFish[a.fishType]) stockByFish[a.fishType] = 0;
-                    stockByFish[a.fishType] += a.quantity;
-                }
-            });
-            
-            const stockDetails = document.getElementById('stockDetails');
-            stockDetails.innerHTML = Object.entries(stockByFish)
-                .filter(([fish, count]) => count > 0)
-                .map(([fish, count]) => `<div>🐟 ${fish}: ${count.toLocaleString('en-IN')} fish</div>`)
-                .join('') || '<div>No fish in this pond</div>';
-            
-            document.getElementById('currentStockInfo').style.display = 'block';
-            
-            // Update fish type dropdown with fish in this pond
-            const fishSelect = document.getElementById('adjustFishType');
-            fishSelect.innerHTML = `
-                <option value="">Select Fish</option>
-                ${Object.keys(stockByFish).map(f => `<option value="${f}">${f}</option>`).join('')}
-                <option value="__new__">Other Fish Type</option>
-            `;
-        }
-
-        // Update fish type dropdowns
-        function updateFishTypeDropdowns() {
-            document.querySelectorAll('.fish-type').forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = `
-                    <option value="">Select Fish</option>
-                    ${appData.fishTypes.map(f => `<option value="${f}">${f}</option>`).join('')}
-                `;
-                select.value = currentValue;
-            });
-            
-            // Update pond modal fish type
-            const pondFishSelect = document.getElementById('pondFishType');
-            if (pondFishSelect) {
-                pondFishSelect.innerHTML = `
-                    <option value="">Select Fish Type</option>
-                    ${appData.fishTypes.map(f => `<option value="${f}">${f}</option>`).join('')}
-                `;
-            }
-        }
-
-        // Update pond dropdowns
-        function updatePondDropdowns() {
-            const pondSelects = [
-                ...document.querySelectorAll('.pond-select'),
-                document.getElementById('expensePond'),
-                document.getElementById('adjustPond')
-            ];
-            
-            pondSelects.forEach(select => {
-                if (select) {
-                    const currentValue = select.value;
-                    select.innerHTML = `
-                        <option value="">Select Pond</option>
-                        ${appData.ponds.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                    `;
-                    select.value = currentValue;
-                }
-            });
-        }
-
-        // Update person dropdowns
-        function updatePersonDropdowns() {
-            const select = document.getElementById('personName');
-            if (select) {
-                select.innerHTML = `
-                    <option value="">Select or Add New</option>
-                    ${appData.people.map(p => `<option value="${p.name}">${p.name} (${p.type})</option>`).join('')}
-                `;
-            }
-        }
-
-        // Update pond grid
-        function updatePondGrid() {
-            const grid = document.getElementById('pondGrid');
-            if (!grid) return;
-            
-            if (appData.ponds.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
-                        <div class="icon">🏊</div>
-                        <p>No ponds added yet. Click "Add New Pond" to get started!</p>
-                    </div>
-                `;
-            } else {
-                grid.innerHTML = appData.ponds.map(pond => {
-                    // Calculate pond statistics
-                    const stockByFish = {};
-                    let investment = 0;
-                    let revenue = 0;
-                    let expenses = 0;
-                    
-                    appData.transactions.forEach(t => {
-                        t.fishDetails.forEach(f => {
-                            if (f.pondId == pond.id) {
-                                if (!stockByFish[f.type]) stockByFish[f.type] = 0;
-                                
-                                if (t.type === 'purchase') {
-                                    stockByFish[f.type] += f.quantity;
-                                    investment += f.amount;
-                                } else if (t.type === 'sale') {
-                                    stockByFish[f.type] -= f.quantity;
-                                    revenue += f.amount;
-                                }
-                            }
-                        });
-                    });
-                    
-                    // Apply stock adjustments
-                    (appData.stockAdjustments || []).forEach(a => {
-                        if (a.pondId == pond.id) {
-                            if (!stockByFish[a.fishType]) stockByFish[a.fishType] = 0;
-                            stockByFish[a.fishType] += a.quantity;
-                        }
-                    });
-                    
-                    appData.expenses.forEach(e => {
-                        if (e.pondId == pond.id) {
-                            expenses += e.amount;
-                        }
-                    });
-                    
-                    const totalFish = Object.values(stockByFish).reduce((sum, count) => sum + count, 0);
-                    const fishTypes = Object.keys(stockByFish).filter(f => stockByFish[f] > 0);
-                    const profit = revenue - investment - expenses;
-                    
-                    return `
-                        <div class="pond-card">
-                            <button class="edit-pond-btn" onclick="showAdjustStockModal()">✏️</button>
-                            <h3>${pond.name}</h3>
-                            <div class="count">${totalFish.toLocaleString('en-IN')}</div>
-                            <small>Fish Count</small>
-                            ${fishTypes.length > 0 ? `
-                                <div class="fish-types">
-                                    ${fishTypes.slice(0, 3).join(', ')}
-                                    ${fishTypes.length > 3 ? ` +${fishTypes.length - 3} more` : ''}
-                                </div>
-                            ` : '<div class="fish-types">No fish</div>'}
-                            <div style="margin-top: 10px; font-size: 12px;">
-                                Capacity: ${pond.capacity.toLocaleString('en-IN')}<br>
-                                Investment: ₹${investment.toLocaleString('en-IN')}<br>
-                                Profit: <span style="color: ${profit >= 0 ? '#38ef7d' : '#f5576c'}">₹${profit.toLocaleString('en-IN')}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-
-        // Update reports
-        function updateReports() {
-            const { startDate, endDate } = getDateRange(appData.currentReportPeriod);
-            
-            let income = 0;
-            let expense = 0;
-            
-            // Calculate totals
-            appData.transactions.forEach(t => {
-                const tDate = new Date(t.date);
-                if (tDate >= startDate && tDate < endDate) {
-                    if (t.type === 'sale') {
-                        income += t.totalAmount;
-                    } else if (t.type === 'purchase') {
-                        expense += t.totalAmount;
-                    } else if (t.type === 'trading') {
-                        income += t.totalAmount;
-                        expense += t.totalCost || 0;
-                    }
-                }
-            });
-            
-            appData.expenses.forEach(e => {
-                const eDate = new Date(e.date);
-                if (eDate >= startDate && eDate < endDate) {
-                    expense += e.amount;
-                }
-            });
-            
-            const profit = income - expense;
-            
-            // Update labels
-            const periodText = appData.currentReportPeriod === 'month' ? 'This Month' :
-                              appData.currentReportPeriod === 'quarter' ? 'This Quarter' :
-                              'This Year';
-            
-            document.getElementById('reportPeriodLabel').textContent = periodText;
-            document.getElementById('reportPeriodLabelExpense').textContent = periodText;
-            document.getElementById('reportPeriodLabelProfit').textContent = periodText;
-            
-            document.getElementById('reportIncome').textContent = `₹${income.toLocaleString('en-IN')}`;
-            document.getElementById('reportExpense').textContent = `₹${expense.toLocaleString('en-IN')}`;
-            document.getElementById('reportProfit').textContent = `₹${profit.toLocaleString('en-IN')}`;
-            
-            // Update pond profit report
-            const pondProfitReport = document.getElementById('pondProfitReport');
-            if (pondProfitReport) {
-                const pondProfits = appData.ponds.map(pond => {
-                    let income = 0;
-                    let expense = 0;
-                    
-                    appData.transactions.forEach(t => {
-                        const tDate = new Date(t.date);
-                        if (tDate >= startDate && tDate < endDate) {
-                            t.fishDetails.forEach(f => {
-                                if (f.pondId == pond.id) {
-                                    if (t.type === 'sale') {
-                                        income += f.amount;
-                                    } else if (t.type === 'purchase') {
-                                        expense += f.amount;
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    
-                    appData.expenses.forEach(e => {
-                        const eDate = new Date(e.date);
-                        if (eDate >= startDate && eDate < endDate && e.pondId == pond.id) {
-                            expense += e.amount;
-                        }
-                    });
-                    
-                    return {
-                        name: pond.name,
-                        income: income,
-                        expense: expense,
-                        profit: income - expense
-                    };
-                });
-                
-                pondProfitReport.innerHTML = `
-                    <div class="transaction-list">
-                        ${pondProfits.map(p => `
-                            <div class="transaction-item">
-                                <div>
-                                    <strong>${p.name}</strong><br>
-                                    <small>Income: ₹${p.income.toLocaleString('en-IN')} | Expense: ₹${p.expense.toLocaleString('en-IN')}</small>
-                                </div>
-                                <div>
-                                    <strong style="color: ${p.profit >= 0 ? '#28a745' : '#dc3545'}">
-                                        ₹${p.profit.toLocaleString('en-IN')}
-                                    </strong>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-        }
-
-        // Update settings lists
-        function updateSettingsLists() {
-            // Update fish types list
-            const fishTypesList = document.getElementById('fishTypesList');
-            if (fishTypesList) {
-                fishTypesList.innerHTML = appData.fishTypes.map(f => `
-                    <div style="padding: 5px; background: white; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between;">
-                        <span>🐟 ${f}</span>
-                        <button class="remove-btn" onclick="removeFishType('${f}')">Remove</button>
-                    </div>
-                `).join('');
-            }
-            
-            // Update people list
-            const peopleList = document.getElementById('peopleList');
-            if (peopleList) {
-                peopleList.innerHTML = appData.people.map(p => `
-                    <div style="padding: 5px; background: white; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between;">
-                        <span>👤 ${p.name} (${p.type})</span>
-                        <button class="remove-btn" onclick="removePerson('${p.name}')">Remove</button>
-                    </div>
-                `).join('');
-            }
-        }
-
-        // Add fish type
-        function addFishType() {
-            const input = document.getElementById('newFishType');
-            const fishType = input.value.trim();
-            
-            if (fishType && !appData.fishTypes.includes(fishType)) {
-                appData.fishTypes.push(fishType);
-                saveData();
-                input.value = '';
-                updateAllDisplays();
-            }
-        }
-
-        // Remove fish type
-        function removeFishType(fishType) {
-            appData.fishTypes = appData.fishTypes.filter(f => f !== fishType);
-            saveData();
-            updateAllDisplays();
-        }
-
-        // Add person
-        function addPerson() {
-            const nameInput = document.getElementById('newPersonInput');
-            const typeSelect = document.getElementById('personType');
-            const name = nameInput.value.trim();
-            
-            if (name && !appData.people.find(p => p.name === name)) {
-                appData.people.push({
-                    name: name,
-                    type: typeSelect.value
-                });
-                saveData();
-                nameInput.value = '';
-                updateAllDisplays();
-            }
-        }
-
-        // Remove person
-        function removePerson(name) {
-            appData.people = appData.people.filter(p => p.name !== name);
-            saveData();
-            updateAllDisplays();
-        }
-
-        // Modal functions
-        function showAddPondModal() {
-            document.getElementById('addPondModal').classList.add('active');
-            updateFishTypeDropdowns();
-        }
-
-        function showAdjustStockModal() {
-            document.getElementById('adjustStockModal').classList.add('active');
-            updatePondDropdowns();
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
-
-        // Data management functions
-        function exportData() {
-            const exportData = {
-                ...appData,
-                exportDate: new Date().toISOString(),
-                version: '2.0'
-            };
-            
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `cochin_aquatics_data_${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-        }
-
-        function backupData() {
-            exportData();
-            alert('✅ Data backed up successfully! Check your downloads folder.');
-        }
-
-        function restoreData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    try {
-                        const imported = JSON.parse(event.target.result);
-                        appData = { ...getDefaultAppData(), ...imported };
-                        saveData();
-                        updateAllDisplays();
-                        alert('✅ Data restored successfully!');
-                    } catch (error) {
-                        alert('❌ Error restoring data. Please check the file.');
-                    }
-                };
-                reader.readAsText(file);
-            };
-            input.click();
-        }
-
-        function clearAllData() {
-    console.log('🗑️ Clear All Data function called');
+// ===== UNIFIED SAVE/LOAD SYSTEM =====
+async function unifiedSaveData() {
+    console.log('💾 Unified save starting...');
     
-    if (confirm('⚠️ Are you sure you want to clear all data? This cannot be undone!')) {
-        if (confirm('⚠️ This will delete everything! Are you really sure?')) {
-            console.log('✅ User confirmed clearing');
-            
-            // Clear localStorage first
-            localStorage.removeItem('cochinAquaticsDataV2');
-            localStorage.removeItem('cochinAquaticsData');
-            console.log('✅ localStorage cleared');
-            
-            // Clear Firebase data
-            if (currentUser && currentUser.uid) {
-                console.log('🔄 Clearing Firebase for user:', currentUser.uid);
-                const userRef = database.ref(`users/${currentUser.uid}/aquaticsData`);
-                
-                userRef.remove().then(() => {
-                    console.log('✅ Firebase data cleared successfully');
-                    alert('✅ All data cleared successfully!');
-                    location.reload();
-                }).catch((error) => {
-                    console.error('❌ Firebase clear error:', error);
-                    alert('⚠️ Error clearing cloud data: ' + error.message);
-                    location.reload();
-                });
-            } else {
-                console.log('⚠️ No authenticated user found');
-                alert('✅ Local data cleared (no cloud user found)');
-                location.reload();
-            }
-        } else {
-            console.log('❌ User cancelled at second confirmation');
-        }
-    } else {
-        console.log('❌ User cancelled at first confirmation');
+    if (!appData) {
+        console.error('❌ No appData to save');
+        return false;
     }
 
-        // Initialize app on load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🐟 Cochin Aquatics System v2.0 - Initializing...');
-            
-            try {
-                // Initialize data
-                loadData();
-                
-                // Fix tab switching - remove inline onclick and use proper event listeners
-                document.querySelectorAll('.tab').forEach(tab => {
-                    // Get tab name from onclick attribute
-                    const onclickStr = tab.getAttribute('onclick');
-                    if (onclickStr) {
-                        const match = onclickStr.match(/switchTab\('([^']+)'\)/);
-                        if (match) {
-                            const tabName = match[1];
-                            tab.removeAttribute('onclick');
-                            tab.addEventListener('click', function() {
-                                switchTab(tabName);
-                            }, { passive: true });
-                        }
-                    }
-                });
-                
-                console.log('✅ System initialized successfully!');
-                console.log('📊 Data loaded:', {
-                    transactions: appData.transactions.length,
-                    expenses: appData.expenses.length,
-                    ponds: appData.ponds.length,
-                    fishTypes: appData.fishTypes.length
-                });
-                
-            } catch (error) {
-                console.error('❌ Initialization error:', error);
-                alert('⚠️ There was an error loading the system. Please refresh the page.');
-            }
-        });
-        
-        // Add global error handler for debugging
-        window.addEventListener('error', function(e) {
-            console.error('❌ JavaScript Error:', e.error);
-            console.error('At:', e.filename, 'Line:', e.lineno);
-        });
-        
-        // Test function for debugging
-        window.testSystem = function() {
-            console.log('🧪 Running System Test...');
-            console.log('📦 App Data:', appData);
-            console.log('💾 LocalStorage Keys:', Object.keys(localStorage));
-            console.log('📋 Forms Found:', {
-                transaction: document.getElementById('transactionForm') ? '✅' : '❌',
-                expense: document.getElementById('expenseForm') ? '✅' : '❌',
-                addPond: document.getElementById('addPondForm') ? '✅' : '❌'
-            });
-            console.log('🎯 Current Tab:', document.querySelector('.tab-content.active')?.id);
-            return '✅ Test Complete - Check console for details';
-        };
-        
-        // Firebase Authentication and Database Integration
-        let currentUser = null;
-        let isAuthenticated = false;
+    // Always save to localStorage first
+    try {
+        localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
+        console.log('✅ Local save successful');
+    } catch (error) {
+        console.error('❌ Local save failed:', error);
+    }
 
-        // Authentication state management
-        function initializeAuth() {
-            console.log('🔐 Initializing Firebase Authentication...');
+    // Save to Firebase if authenticated
+    if (currentUser && currentUser.uid) {
+        try {
+            console.log(`☁️ Saving to Firebase for user: ${currentUser.uid}`);
+            const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
+            await userRef.set(appData);
+            console.log('✅ Firebase save successful');
             
-            // Check authentication state
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    console.log('✅ User authenticated:', user.email);
-                    currentUser = user;
-                    isAuthenticated = true;
-                    showMainApp();
-                    loadUserData();
-                } else {
-                    console.log('❌ User not authenticated');
-                    currentUser = null;
-                    isAuthenticated = false;
-                    showAuthForm();
-                }
-            });
-
-            // Setup authentication form
-            setupAuthForm();
+            // Force UI update after successful save
+            forceUIUpdate();
+            return true;
+        } catch (error) {
+            console.error('❌ Firebase save failed:', error);
+            return false;
         }
+    }
+    
+    // Force UI update even for local-only saves
+    forceUIUpdate();
+    return true;
+}
 
-        function showMainApp() {
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-            document.getElementById('userEmail').textContent = currentUser.email;
-            
-            // Load user-specific data
-            loadUserData();
-        }
+async function unifiedLoadData() {
+    console.log('📥 Unified load starting...');
 
-        function showAuthForm() {
-            document.getElementById('authContainer').style.display = 'block';
-            document.getElementById('appContainer').style.display = 'none';
-        }
+    if (currentUser && currentUser.uid) {
+        try {
+            console.log(`☁️ Loading from Firebase for user: ${currentUser.uid}`);
+            const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
+            const snapshot = await userRef.once('value');
+            const firebaseData = snapshot.val();
 
-        function setupAuthForm() {
-            const authSubmit = document.getElementById('authSubmit');
-            const authEmail = document.getElementById('authEmail');
-            const authPassword = document.getElementById('authPassword');
-            const toggleAuth = document.getElementById('toggleAuth');
-            const authError = document.getElementById('authError');
-            const authLoading = document.getElementById('authLoading');
-            
-            let isSignUp = false;
-
-            // Toggle between sign in and sign up
-            toggleAuth.addEventListener('click', () => {
-                isSignUp = !isSignUp;
-                if (isSignUp) {
-                    authSubmit.textContent = 'Sign Up';
-                    toggleAuth.innerHTML = 'Already have an account? <span>Sign In</span>';
-                } else {
-                    authSubmit.textContent = 'Sign In';
-                    toggleAuth.innerHTML = "Don't have an account? <span>Sign Up</span>";
-                }
-                hideAuthError();
-            });
-
-            // Handle form submission
-            authSubmit.addEventListener('click', async (e) => {
-                e.preventDefault();
+            if (firebaseData && typeof firebaseData === 'object') {
+                console.log('✅ Firebase data loaded');
+                console.log(`📊 Found: ${firebaseData.transactions?.length || 0} transactions, ${firebaseData.expenses?.length || 0} expenses`);
                 
-                const email = authEmail.value.trim();
-                const password = authPassword.value;
+                // Complete replacement with Firebase data
+                appData = { ...getDefaultAppData(), ...firebaseData };
                 
-                if (!email || !password) {
-                    showAuthError('Please enter both email and password.');
-                    return;
-                }
-
-                showAuthLoading(true);
-                hideAuthError();
-
+                // Force UI update
+                forceUIUpdate();
+                
+                // Save to localStorage as backup
                 try {
-                    if (isSignUp) {
-                        // Create new user
-                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                        console.log('✅ User created:', userCredential.user.email);
-                        
-                        // Initialize user data
-                        await initializeUserData(userCredential.user.uid);
-                        
-                    } else {
-                        // Sign in existing user
-                        const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                        console.log('✅ User signed in:', userCredential.user.email);
-                    }
-                } catch (error) {
-                    console.error('❌ Authentication error:', error);
-                    showAuthError(getAuthErrorMessage(error.code));
-                } finally {
-                    showAuthLoading(false);
-                }
-            });
-
-            // Logout functionality
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
-                try {
-                    await auth.signOut();
-                    console.log('✅ User signed out');
-                } catch (error) {
-                    console.error('❌ Logout error:', error);
-                }
-            });
-        }
-
-        function showAuthError(message) {
-            const authError = document.getElementById('authError');
-            authError.textContent = message;
-            authError.style.display = 'block';
-        }
-
-        function hideAuthError() {
-            document.getElementById('authError').style.display = 'none';
-        }
-
-        function showAuthLoading(show) {
-            document.getElementById('authLoading').style.display = show ? 'block' : 'none';
-        }
-
-        function getAuthErrorMessage(errorCode) {
-            switch (errorCode) {
-                case 'auth/user-not-found':
-                    return 'No account found with this email address.';
-                case 'auth/wrong-password':
-                    return 'Incorrect password.';
-                case 'auth/email-already-in-use':
-                    return 'An account with this email already exists.';
-                case 'auth/weak-password':
-                    return 'Password should be at least 6 characters.';
-                case 'auth/invalid-email':
-                    return 'Please enter a valid email address.';
-                default:
-                    return 'Authentication failed. Please try again.';
-            }
-        }
-
-        // Firebase Database Integration
-        function getUserDataRef(userId = null) {
-            const uid = userId || currentUser?.uid;
-            return database.ref(`users/${uid}/aquaticsData`);
-        }
-
-        async function initializeUserData(userId) {
-            console.log('🔧 Initializing user data...');
-            const userRef = getUserDataRef(userId);
-            
-            // Set default data structure for new users
-            await userRef.set(getDefaultAppData());
-            console.log('✅ User data initialized');
-        }
-
-        async function loadUserData() {
-            if (!currentUser) return;
-            
-            console.log('📥 Loading user data from Firebase...');
-            try {
-                const userRef = getUserDataRef();
-                const snapshot = await userRef.once('value');
-                const userData = snapshot.val();
-                
-                if (userData) {
-                    // Merge with defaults to ensure all properties exist
-                    appData = { ...getDefaultAppData(), ...userData };
-                    console.log('✅ User data loaded successfully');
-                } else {
-                    // First time user - initialize with defaults
-                    appData = getDefaultAppData();
-                    await saveData();
-                    console.log('✅ New user data initialized');
+                    localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
+                } catch (e) {
+                    console.warn('⚠️ localStorage backup failed');
                 }
                 
-                updateAllDisplays();
-            } catch (error) {
-                console.error('❌ Error loading user data:', error);
-                // Fallback to local storage
-                loadData();
-            }
-        }
-
-        async function saveData() {
-            if (!isAuthenticated || !currentUser) {
-                console.log('⚠️ User not authenticated, saving locally only');
-                return saveDataLocally();
-            }
-
-            try {
-                console.log('💾 Saving data to Firebase...');
-                const userRef = getUserDataRef();
-                await userRef.set(appData);
-                console.log('✅ Data saved to Firebase successfully');
-                
-                // Also save locally as backup
-                saveDataLocally();
                 return true;
-            } catch (error) {
-                console.error('❌ Error saving to Firebase:', error);
-                // Fallback to local storage
-                return saveDataLocally();
+            }
+        } catch (error) {
+            console.error('❌ Firebase load failed:', error);
+        }
+    }
+
+    // Fallback to localStorage
+    try {
+        const localData = localStorage.getItem('cochinAquaticsDataV2');
+        if (localData) {
+            const parsed = JSON.parse(localData);
+            appData = { ...getDefaultAppData(), ...parsed };
+            console.log('💾 Local data loaded');
+            forceUIUpdate();
+            return true;
+        }
+    } catch (error) {
+        console.error('❌ Local load failed:', error);
+    }
+
+    // Last resort: default data
+    console.log('🔧 Using default data');
+    appData = getDefaultAppData();
+    forceUIUpdate();
+    return false;
+}
+
+// ===== FORCE UI UPDATE SYSTEM =====
+function forceUIUpdate() {
+    console.log('🔄 Force UI update triggered');
+    
+    if (!appData) {
+        console.error('❌ No appData for UI update');
+        return;
+    }
+
+    try {
+        updateDashboard();
+        updateAllDropdowns();
+        updatePondGrid();
+        updateReports();
+        updateSettingsLists();
+        console.log('✅ UI update complete');
+    } catch (error) {
+        console.error('❌ UI update failed:', error);
+    }
+}
+
+// ===== DASHBOARD UPDATE SYSTEM =====
+function updateDashboard() {
+    if (!appData) return;
+
+    const { startDate, endDate } = getDateRange(appData.currentDashboardPeriod);
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    // Calculate from transactions
+    (appData.transactions || []).forEach(t => {
+        const tDate = new Date(t.date);
+        if (tDate >= startDate && tDate < endDate) {
+            if (t.type === 'sale') {
+                totalIncome += t.totalAmount || 0;
+            } else if (t.type === 'purchase') {
+                totalExpense += t.totalAmount || 0;
+            } else if (t.type === 'trading') {
+                totalIncome += t.totalAmount || 0;
+                totalExpense += t.totalCost || 0;
             }
         }
+    });
 
-        function saveDataLocally() {
-            try {
-                localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
-                console.log('💾 Data saved locally successfully');
-                return true;
-            } catch (error) {
-                console.error('❌ Error saving data locally:', error);
-                if (error.name === 'QuotaExceededError') {
-                    alert('⚠️ Local storage is full! Using cloud storage only.');
-                } else {
-                    alert('⚠️ Error saving data. Please try again.');
-                }
-                return false;
-            }
+    // Calculate from expenses
+    (appData.expenses || []).forEach(e => {
+        const eDate = new Date(e.date);
+        if (eDate >= startDate && eDate < endDate) {
+            totalExpense += e.amount || 0;
         }
+    });
 
-        // Real-time data synchronization
-        function enableRealTimeSync() {
-            if (!isAuthenticated || !currentUser) return;
+    const profit = totalIncome - totalExpense;
 
-            console.log('🔄 Enabling real-time data synchronization...');
-            const userRef = getUserDataRef();
-            
-            userRef.on('value', (snapshot) => {
-                const userData = snapshot.val();
-                if (userData && userData !== appData) {
-                    console.log('🔄 Data updated from cloud, refreshing display...');
-                    appData = { ...getDefaultAppData(), ...userData };
-                    updateAllDisplays();
+    // Update period labels
+    const periodText = appData.currentDashboardPeriod === 'today' ? "Today's" : 
+                      appData.currentDashboardPeriod === 'week' ? "This Week's" : "This Month's";
+
+    const elements = {
+        periodLabel: document.getElementById('periodLabel'),
+        periodLabelExpense: document.getElementById('periodLabelExpense'),
+        periodLabelProfit: document.getElementById('periodLabelProfit'),
+        periodIncome: document.getElementById('periodIncome'),
+        periodExpense: document.getElementById('periodExpense'),
+        periodProfit: document.getElementById('periodProfit'),
+        activePonds: document.getElementById('activePonds')
+    };
+
+    // Safe updates with null checks
+    if (elements.periodLabel) elements.periodLabel.textContent = periodText;
+    if (elements.periodLabelExpense) elements.periodLabelExpense.textContent = periodText;
+    if (elements.periodLabelProfit) elements.periodLabelProfit.textContent = periodText;
+    if (elements.periodIncome) elements.periodIncome.textContent = `₹${totalIncome.toLocaleString('en-IN')}`;
+    if (elements.periodExpense) elements.periodExpense.textContent = `₹${totalExpense.toLocaleString('en-IN')}`;
+    if (elements.periodProfit) elements.periodProfit.textContent = `₹${profit.toLocaleString('en-IN')}`;
+    if (elements.activePonds) elements.activePonds.textContent = (appData.ponds || []).length;
+
+    console.log(`💰 Dashboard updated: Income ₹${totalIncome}, Expense ₹${totalExpense}, Profit ₹${profit}`);
+
+    updateRecentTransactions();
+}
+
+function updateRecentTransactions() {
+    const container = document.getElementById('recentTransactions');
+    if (!container) return;
+
+    const allItems = [
+        ...(appData.transactions || []).map(t => ({...t, category: 'transaction'})),
+        ...(appData.expenses || []).map(e => ({...e, category: 'expense'}))
+    ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+
+    if (allItems.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">📋</div>
+                <p>No transactions yet. Start by adding a new transaction!</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = allItems.map(item => {
+        if (item.category === 'transaction') {
+            let profitText = '';
+            if (item.type === 'trading' && item.totalCost) {
+                const profit = item.totalAmount - item.totalCost;
+                profitText = `<br><small style="color: ${profit >= 0 ? 'green' : 'red'}">Profit: ₹${profit.toLocaleString('en-IN')}</small>`;
+            }
+            return `
+                <div class="transaction-item">
+                    <div>
+                        <strong>${item.personName || 'Unknown'}</strong><br>
+                        <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
+                        ${profitText}
+                    </div>
+                    <div>
+                        <span class="transaction-type type-${item.type}">${item.type}</span>
+                        <strong>₹${item.totalAmount.toLocaleString('en-IN')}</strong>
+                    </div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="transaction-item">
+                    <div>
+                        <strong>${item.category}: ${item.description || item.employeeName || ''}</strong><br>
+                        <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
+                    </div>
+                    <div>
+                        <span class="transaction-type type-expense">expense</span>
+                        <strong>₹${item.amount.toLocaleString('en-IN')}</strong>
+                    </div>
+                </div>
+            `;
+        }
+    }).join('');
+}
+
+// ===== SETTINGS MANAGEMENT SYSTEM =====
+async function addFishType() {
+    const input = document.getElementById('newFishType');
+    const fishType = input.value.trim();
+    
+    if (fishType && !appData.fishTypes.includes(fishType)) {
+        appData.fishTypes.push(fishType);
+        console.log(`🐟 Added fish type: ${fishType}`);
+        
+        const saved = await unifiedSaveData();
+        if (saved) {
+            input.value = '';
+            console.log('✅ Fish type saved successfully');
+        }
+    }
+}
+
+async function removeFishType(fishType) {
+    appData.fishTypes = appData.fishTypes.filter(f => f !== fishType);
+    console.log(`🗑️ Removed fish type: ${fishType}`);
+    await unifiedSaveData();
+}
+
+async function addPerson() {
+    const nameInput = document.getElementById('newPersonInput');
+    const typeSelect = document.getElementById('personType');
+    const name = nameInput.value.trim();
+    
+    if (name && !appData.people.find(p => p.name === name)) {
+        appData.people.push({
+            name: name,
+            type: typeSelect.value
+        });
+        console.log(`👥 Added person: ${name} (${typeSelect.value})`);
+        
+        const saved = await unifiedSaveData();
+        if (saved) {
+            nameInput.value = '';
+            console.log('✅ Person saved successfully');
+        }
+    }
+}
+
+async function removePerson(name) {
+    appData.people = appData.people.filter(p => p.name !== name);
+    console.log(`🗑️ Removed person: ${name}`);
+    await unifiedSaveData();
+}
+
+// ===== DROPDOWN UPDATE SYSTEM =====
+function updateAllDropdowns() {
+    updateFishTypeDropdowns();
+    updatePondDropdowns();
+    updatePersonDropdowns();
+    updateExpenseCategoryDropdown();
+}
+
+function updateFishTypeDropdowns() {
+    document.querySelectorAll('.fish-type').forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = `
+            <option value="">Select Fish</option>
+            ${(appData.fishTypes || []).map(f => `<option value="${f}">${f}</option>`).join('')}
+        `;
+        select.value = currentValue;
+    });
+
+    const pondFishSelect = document.getElementById('pondFishType');
+    if (pondFishSelect) {
+        pondFishSelect.innerHTML = `
+            <option value="">Select Fish Type</option>
+            ${(appData.fishTypes || []).map(f => `<option value="${f}">${f}</option>`).join('')}
+        `;
+    }
+}
+
+function updatePondDropdowns() {
+    const pondSelects = [
+        ...document.querySelectorAll('.pond-select'),
+        document.getElementById('expensePond'),
+        document.getElementById('adjustPond')
+    ];
+    
+    pondSelects.forEach(select => {
+        if (select) {
+            const currentValue = select.value;
+            select.innerHTML = `
+                <option value="">Select Pond</option>
+                ${(appData.ponds || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            `;
+            select.value = currentValue;
+        }
+    });
+}
+
+function updatePersonDropdowns() {
+    const select = document.getElementById('personName');
+    if (select) {
+        select.innerHTML = `
+            <option value="">Select or Add New</option>
+            ${(appData.people || []).map(p => `<option value="${p.name}">${p.name} (${p.type})</option>`).join('')}
+        `;
+    }
+}
+
+function updateExpenseCategoryDropdown() {
+    const select = document.getElementById('expenseCategory');
+    if (select) {
+        select.innerHTML = `
+            <option value="">Select Category</option>
+            ${(appData.expenseCategories || []).map(c => `<option value="${c}">${c}</option>`).join('')}
+            <option value="__new__">➕ Add New Category</option>
+        `;
+        
+        select.onchange = function() {
+            document.getElementById('newCategoryDiv').style.display = 
+                this.value === '__new__' ? 'flex' : 'none';
+        };
+    }
+}
+
+// ===== POND GRID UPDATE =====
+function updatePondGrid() {
+    const grid = document.getElementById('pondGrid');
+    if (!grid) return;
+    
+    if (!appData.ponds || appData.ponds.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1/-1;">
+                <div class="icon">🏊</div>
+                <p>No ponds added yet. Click "Add New Pond" to get started!</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = appData.ponds.map(pond => {
+        const stockByFish = {};
+        let investment = 0;
+        let revenue = 0;
+        let expenses = 0;
+        
+        // Calculate pond statistics
+        (appData.transactions || []).forEach(t => {
+            (t.fishDetails || []).forEach(f => {
+                if (f.pondId == pond.id) {
+                    if (!stockByFish[f.type]) stockByFish[f.type] = 0;
+                    
+                    if (t.type === 'purchase') {
+                        stockByFish[f.type] += f.quantity;
+                        investment += f.amount;
+                    } else if (t.type === 'sale') {
+                        stockByFish[f.type] -= f.quantity;
+                        revenue += f.amount;
+                    }
                 }
             });
-        }
-
-        // Override the original saveData function to use Firebase
-        const originalSaveData = window.saveData || function() {};
-        window.saveData = saveData;
-
-        // Initialize Firebase on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔥 Starting Firebase initialization...');
-            
-            // Wait for Firebase to be ready
-            if (typeof firebase !== 'undefined') {
-                initializeAuth();
-                setTimeout(() => {
-                    if (isAuthenticated) {
-                        enableRealTimeSync();
-                    }
-                }, 1000);
-            } else {
-                console.error('❌ Firebase not loaded!');
-                showAuthError('Firebase not loaded. Please refresh the page.');
+        });
+        
+        (appData.expenses || []).forEach(e => {
+            if (e.pondId == pond.id) {
+                expenses += e.amount;
             }
         });
-
-        // Add a simple test transaction function
-        window.addTestTransaction = function() {
-            const testTransaction = {
-                id: appData.nextTransactionId++,
-                date: new Date().toISOString().split('T')[0],
-                type: 'purchase',
-                personName: 'Test Vendor',
-                fishDetails: [{
-                    type: 'Gold Fish',
-                    quantity: 100,
-                    rate: 2,
-                    pondId: '1',
-                    amount: 200
-                }],
-                totalAmount: 200,
-                totalCost: 0,
-                notes: 'Test transaction'
-            };
-            
-            appData.transactions.push(testTransaction);
-            saveData();
-            updateAllDisplays();
-            
-            return '✅ Test transaction added successfully!';
-        };
-
-}  // Close any remaining scope
-
-        // ===== PERMANENT AUTHENTICATION FIX =====
-        // Complete Authentication System
-        let isSignUp = false;
         
-        function toggleAuthMode() {
+        const totalFish = Object.values(stockByFish).reduce((sum, count) => sum + count, 0);
+        const fishTypes = Object.keys(stockByFish).filter(f => stockByFish[f] > 0);
+        const profit = revenue - investment - expenses;
+        
+        return `
+            <div class="pond-card">
+                <button class="edit-pond-btn" onclick="showAdjustStockModal()">✏️</button>
+                <h3>${pond.name}</h3>
+                <div class="count">${totalFish.toLocaleString('en-IN')}</div>
+                <small>Fish Count</small>
+                ${fishTypes.length > 0 ? `
+                    <div class="fish-types">
+                        ${fishTypes.slice(0, 3).join(', ')}
+                        ${fishTypes.length > 3 ? ` +${fishTypes.length - 3} more` : ''}
+                    </div>
+                ` : '<div class="fish-types">No fish</div>'}
+                <div style="margin-top: 10px; font-size: 12px;">
+                    Capacity: ${pond.capacity.toLocaleString('en-IN')}<br>
+                    Investment: ₹${investment.toLocaleString('en-IN')}<br>
+                    Profit: <span style="color: ${profit >= 0 ? '#38ef7d' : '#f5576c'}">₹${profit.toLocaleString('en-IN')}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ===== SETTINGS LISTS UPDATE =====
+function updateSettingsLists() {
+    const fishTypesList = document.getElementById('fishTypesList');
+    if (fishTypesList) {
+        fishTypesList.innerHTML = (appData.fishTypes || []).map(f => `
+            <div style="padding: 5px; background: white; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between;">
+                <span>🐟 ${f}</span>
+                <button class="remove-btn" onclick="removeFishType('${f}')">Remove</button>
+            </div>
+        `).join('');
+    }
+    
+    const peopleList = document.getElementById('peopleList');
+    if (peopleList) {
+        peopleList.innerHTML = (appData.people || []).map(p => `
+            <div style="padding: 5px; background: white; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between;">
+                <span>👤 ${p.name} (${p.type})</span>
+                <button class="remove-btn" onclick="removePerson('${p.name}')">Remove</button>
+            </div>
+        `).join('');
+    }
+}
+
+// ===== AUTHENTICATION SYSTEM =====
+function initializeAuth() {
+    console.log('🔐 Initializing authentication...');
+    
+    firebase.auth().onAuthStateChanged(async (user) => {
+        const authContainer = document.getElementById('authContainer');
+        const appContainer = document.getElementById('appContainer');
+        const userEmailElement = document.getElementById('userEmail');
+        
+        if (user) {
+            console.log(`✅ User authenticated: ${user.email}`);
+            currentUser = user;
+            isAuthenticated = true;
+            
+            if (authContainer) authContainer.style.display = 'none';
+            if (appContainer) appContainer.style.display = 'block';
+            if (userEmailElement) userEmailElement.textContent = user.email;
+            
+            // Load user data
+            await unifiedLoadData();
+            
+        } else {
+            console.log('❌ User not authenticated');
+            currentUser = null;
+            isAuthenticated = false;
+            
+            if (authContainer) authContainer.style.display = 'block';
+            if (appContainer) appContainer.style.display = 'none';
+            
+            // Load default/local data when not authenticated
+            appData = getDefaultAppData();
+            forceUIUpdate();
+        }
+    });
+    
+    setupAuthForm();
+}
+
+function setupAuthForm() {
+    let isSignUp = false;
+    
+    const authSubmit = document.getElementById('authSubmit');
+    const toggleAuth = document.getElementById('toggleAuth');
+    
+    if (toggleAuth) {
+        toggleAuth.onclick = () => {
             isSignUp = !isSignUp;
-            const submitBtn = document.querySelector('#authSubmit');
-            const toggleBtn = document.querySelector('#toggleAuth');
-            
-            if (isSignUp) {
-                submitBtn.textContent = 'Sign Up';
-                if (toggleBtn) toggleBtn.innerHTML = 'Already have an account? <span style="color: #1e3c72; cursor: pointer;">Sign In</span>';
-            } else {
-                submitBtn.textContent = 'Sign In';
-                if (toggleBtn) toggleBtn.innerHTML = 'Don\'t have an account? <span style="color: #1e3c72; cursor: pointer;">Sign Up</span>';
+            if (authSubmit) {
+                authSubmit.textContent = isSignUp ? 'Sign Up' : 'Sign In';
             }
-        }
-
-        function completeAuth() {
-            const email = document.querySelector('#authEmail').value;
-            const password = document.querySelector('#authPassword').value;
+            toggleAuth.innerHTML = isSignUp ? 
+                'Already have an account? <span>Sign In</span>' :
+                "Don't have an account? <span>Sign Up</span>";
+        };
+    }
+    
+    if (authSubmit) {
+        authSubmit.onclick = async () => {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
             
             if (!email || !password) {
                 alert('Please enter both email and password');
                 return;
             }
             
-            if (isSignUp) {
-                // Sign Up Mode
-                firebase.auth().createUserWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
-                        console.log('✅ Sign up successful:', userCredential.user.email);
-                        // Don't reload, let auth state listener handle UI
-                    })
-                    .catch((error) => {
-                        console.error('❌ Sign up error:', error.code, error.message);
-                        alert('❌ Sign up error: ' + error.message);
-                    });
-            } else {
-                // Sign In Mode
-                firebase.auth().signInWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
-                        console.log('✅ Sign in successful:', userCredential.user.email);
-                        // Don't reload, let auth state listener handle UI
-                    })
-                    .catch((error) => {
-                        console.error('❌ Sign in error:', error.code, error.message);
-                        alert('❌ Sign in error: ' + error.message);
-                    });
-            }
-        }
-
-        // Enhanced authentication state listener
-        firebase.auth().onAuthStateChanged((user) => {
-            const authContainer = document.getElementById('authContainer');
-            const appContainer = document.getElementById('appContainer');
-            const userEmailElement = document.getElementById('userEmail');
-            
-            if (user) {
-                // User is signed in - show main app
-                console.log('✅ User authenticated:', user.email);
-                if (authContainer) authContainer.style.display = 'none';
-                if (appContainer) appContainer.style.display = 'block';
-                if (userEmailElement) userEmailElement.textContent = user.email;
-                console.log('📱 Main app displayed automatically');
-            } else {
-                // User is signed out - show login form
-                console.log('❌ User not authenticated');
-                if (authContainer) authContainer.style.display = 'block';
-                if (appContainer) appContainer.style.display = 'none';
-                console.log('🔒 Login form displayed');
-            }
-        });
-
-        // Connect authentication functions when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Connect auth button
-            const authSubmit = document.querySelector('#authSubmit');
-            if (authSubmit) {
-                authSubmit.onclick = completeAuth;
-                console.log('✅ Auth button connected');
-            }
-            
-            // Connect toggle button
-            const toggleAuth = document.querySelector('#toggleAuth');
-            if (toggleAuth) {
-                toggleAuth.onclick = function(e) {
-                    e.preventDefault();
-                    toggleAuthMode();
-                };
-                console.log('✅ Toggle button connected');
-            }
-        });
-        // ===== END AUTHENTICATION FIX =====
-
-// Add to your index.html in the authentication fix section
-function setupLogout() {
-    function workingLogout() {
-        if (confirm('Are you sure you want to logout?')) {
-            firebase.auth().signOut().then(() => {
-                console.log('✅ Logout successful');
-            }).catch((error) => {
-                console.error('❌ Logout error:', error);
-                alert('❌ Logout error: ' + error.message);
-            });
-        }
-    }
-
-    // Find and connect logout button
-    const logoutBtn = document.getElementById('logoutBtn') || 
-                      document.querySelector('[onclick*="logout"]') || 
-                      document.querySelector('button[id*="logout"]');
-    
-    if (logoutBtn) {
-        logoutBtn.onclick = workingLogout;
-        console.log('✅ Logout button connected');
-    }
-}
-
-// Call setup after authentication
-setTimeout(setupLogout, 1000);
-
-// Fix clearAllData function
-function setupClearDataFix() {
-    function fixedClearAllData() {
-        console.log('🗑️ Clear All Data function called');
-        
-        if (confirm('⚠️ Are you sure you want to clear all data? This cannot be undone!')) {
-            if (confirm('⚠️ This will delete everything! Are you really sure?')) {
-                console.log('✅ User confirmed clearing');
-                
-                // Clear localStorage
-                localStorage.removeItem('cochinAquaticsDataV2');
-                localStorage.removeItem('cochinAquaticsData');
-                console.log('✅ localStorage cleared');
-                
-                // Clear Firebase data
-                const currentUser = firebase.auth().currentUser;
-                if (currentUser && currentUser.uid) {
-                    console.log('🔄 Clearing Firebase for user:', currentUser.uid);
-                    const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
-                    
-                    userRef.remove().then(() => {
-                        console.log('✅ Firebase data cleared successfully');
-                        alert('✅ All data cleared successfully!');
-                        location.reload();
-                    }).catch((error) => {
-                        console.error('❌ Firebase clear error:', error);
-                        alert('⚠️ Error clearing cloud data: ' + error.message);
-                        location.reload();
-                    });
+            try {
+                if (isSignUp) {
+                    await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    console.log('✅ Sign up successful');
                 } else {
-                    console.log('⚠️ No authenticated user found');
-                    alert('✅ Local data cleared (no cloud user found)');
-                    location.reload();
+                    await firebase.auth().signInWithEmailAndPassword(email, password);
+                    console.log('✅ Sign in successful');
                 }
+            } catch (error) {
+                console.error('❌ Auth error:', error);
+                alert('Authentication error: ' + error.message);
+            }
+        };
+    }
+    
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.onclick = async () => {
+            try {
+                await firebase.auth().signOut();
+                console.log('✅ Logout successful');
+            } catch (error) {
+                console.error('❌ Logout error:', error);
+            }
+        };
+    }
+}
+
+// ===== UTILITY FUNCTIONS =====
+function getDateRange(period) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let startDate, endDate;
+    
+    switch(period) {
+        case 'today':
+            startDate = today;
+            endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+            break;
+        case 'week':
+            const dayOfWeek = today.getDay();
+            startDate = new Date(today.getTime() - dayOfWeek * 24 * 60 * 60 * 1000);
+            endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+            break;
+        case 'month':
+        default:
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            break;
+    }
+    
+    return { startDate, endDate };
+}
+
+function updateReports() {
+    // Basic reports update - expand as needed
+    const { startDate, endDate } = getDateRange(appData.currentReportPeriod);
+    
+    let income = 0;
+    let expense = 0;
+    
+    (appData.transactions || []).forEach(t => {
+        const tDate = new Date(t.date);
+        if (tDate >= startDate && tDate < endDate) {
+            if (t.type === 'sale') {
+                income += t.totalAmount;
+            } else if (t.type === 'purchase') {
+                expense += t.totalAmount;
+            } else if (t.type === 'trading') {
+                income += t.totalAmount;
+                expense += t.totalCost || 0;
             }
         }
-    }
+    });
     
-    // Replace the clear data function
-    window.clearAllData = fixedClearAllData;
-    console.log('✅ clearAllData function fixed');
+    (appData.expenses || []).forEach(e => {
+        const eDate = new Date(e.date);
+        if (eDate >= startDate && eDate < endDate) {
+            expense += e.amount;
+        }
+    });
+    
+    const profit = income - expense;
+    
+    const elements = {
+        reportIncome: document.getElementById('reportIncome'),
+        reportExpense: document.getElementById('reportExpense'),
+        reportProfit: document.getElementById('reportProfit')
+    };
+    
+    if (elements.reportIncome) elements.reportIncome.textContent = `₹${income.toLocaleString('en-IN')}`;
+    if (elements.reportExpense) elements.reportExpense.textContent = `₹${expense.toLocaleString('en-IN')}`;
+    if (elements.reportProfit) elements.reportProfit.textContent = `₹${profit.toLocaleString('en-IN')}`;
 }
 
-// Call after a delay to ensure everything is loaded
-setTimeout(setupClearDataFix, 2000);
+// ===== TAB SWITCHING =====
+function switchTab(tabName) {
+    console.log(`🔄 Switching to tab: ${tabName}`);
+    
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    const selectedTab = document.getElementById(tabName);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+        
+        const tabButton = document.querySelector(`.tab[data-tab="${tabName}"]`);
+        if (tabButton) {
+            tabButton.classList.add('active');
+        }
+        
+        forceUIUpdate();
+    }
+}
 
-        // ===== WORKING FIREBASE DATA LOADING FIX =====
-        function workingFirebaseDataLoad() {
-            const currentUser = firebase.auth().currentUser;
-            
-            if (currentUser && currentUser.uid) {
-                console.log('☁️ Loading user data from Firebase...');
-                const userRef = database.ref(`users/${currentUser.uid}/aquaticsData`);
-                
-                userRef.once('value', (snapshot) => {
-                    const firebaseData = snapshot.val();
-                    
-                    if (firebaseData) {
-                        console.log('✅ Firebase data loaded successfully');
-                        console.log('📊 Transactions found:', firebaseData.transactions?.length || 0);
-                        console.log('💰 Expenses found:', firebaseData.expenses?.length || 0);
-                        
-                        // CRITICAL: Complete replacement, no merging
-                        window.appData = firebaseData;
-                        
-                        console.log('📋 Final transactions count:', window.appData.transactions?.length || 0);
-                        console.log('💰 Final expenses count:', window.appData.expenses?.length || 0);
-                        
-                        // Update all displays
-                        updateAllDisplays();
-                        console.log('🔄 UI updated with Firebase data');
-                        
-                        // Save to localStorage
-                        try {
-                            localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
-                            console.log('💾 Data synced to localStorage');
-                        } catch (e) {
-                            console.error('❌ localStorage sync error:', e);
-                        }
-                    } else {
-                        console.log('ℹ️ No Firebase data found, using defaults');
-                    }
-                }).catch((error) => {
-                    console.error('❌ Firebase load error:', error);
-                });
+// ===== PERIOD CHANGING =====
+function changeDashboardPeriod(period, btn) {
+    appData.currentDashboardPeriod = period;
+    document.querySelectorAll('#dashboard .period-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    updateDashboard();
+}
+
+function changeReportPeriod(period, btn) {
+    appData.currentReportPeriod = period;
+    document.querySelectorAll('#reports .period-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    updateReports();
+}
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Cochin Aquatics System v2.0 - Starting...');
+    
+    // Initialize default data first
+    appData = getDefaultAppData();
+    
+    // Set today's date in form fields
+    const today = new Date().toISOString().split('T')[0];
+    setTimeout(() => {
+        const transactionDate = document.getElementById('transactionDate');
+        const expenseDate = document.getElementById('expenseDate');
+        if (transactionDate) transactionDate.value = today;
+        if (expenseDate) expenseDate.value = today;
+    }, 100);
+    
+    // Initialize authentication
+    if (typeof firebase !== 'undefined') {
+        initializeAuth();
+    } else {
+        console.error('❌ Firebase not loaded');
+    }
+    
+    // Setup tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+        const onclickStr = tab.getAttribute('onclick');
+        if (onclickStr) {
+            const match = onclickStr.match(/switchTab\('([^']+)'\)/);
+            if (match) {
+                const tabName = match[1];
+                tab.removeAttribute('onclick');
+                tab.addEventListener('click', () => switchTab(tabName));
             }
         }
-
-        // Enhanced authentication state listener with working data loading
-        firebase.auth().onAuthStateChanged((user) => {
-            const authContainer = document.getElementById('authContainer');
-            const appContainer = document.getElementById('appContainer');
-            const userEmailElement = document.getElementById('userEmail');
-            
-            if (user) {
-                console.log('✅ User authenticated:', user.email);
-                if (authContainer) authContainer.style.display = 'none';
-                if (appContainer) appContainer.style.display = 'block';
-                if (userEmailElement) userEmailElement.textContent = user.email;
-                
-                // Load user data after authentication
-                setTimeout(() => {
-                    workingFirebaseDataLoad();
-                }, 1000);
-                
-            } else {
-                console.log('❌ User not authenticated');
-                if (authContainer) authContainer.style.display = 'block';
-                if (appContainer) appContainer.style.display = 'none';
-            }
-        });
-
-        console.log('✅ Working Firebase data loading system installed permanently');
-        // ===== END WORKING FIREBASE DATA LOADING FIX =====
-
-// ===== CRITICAL FIX: Enhanced Save/Load Data Functions =====
-
-// Ensure global currentUser is available
-let globalCurrentUser = null;
-
-function enhancedSaveData() {
-    const currentUser = firebase.auth().currentUser || globalCurrentUser;
+    });
     
-    // Save to localStorage first (for offline use)
-    try {
-        localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
-        console.log('💾 Local data saved successfully');
-    } catch (error) {
-        console.error('❌ Local save error:', error);
-    }
-    
-    // Save to Firebase if user is authenticated
-    if (currentUser && currentUser.uid) {
-        console.log('☁️ Saving to Firebase for user:', currentUser.uid);
-        const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
-        userRef.set(appData).then(() => {
-            console.log('✅ Firebase data saved successfully');
-        }).catch((error) => {
-            console.error('❌ Firebase save error:', error);
-        });
-    } else {
-        console.log('⚠️ No authenticated user - only local save');
-    }
-    return true;
-}
-
-function enhancedLoadData() {
-    const currentUser = firebase.auth().currentUser || globalCurrentUser;
-    
-    if (currentUser && currentUser.uid) {
-        console.log('☁️ Loading from Firebase for user:', currentUser.uid);
-        const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
-        
-        userRef.once('value', (snapshot) => {
-            const firebaseData = snapshot.val();
-            
-            if (firebaseData) {
-                console.log('✅ Firebase data loaded successfully');
-                console.log('📊 Transactions found:', firebaseData.transactions?.length || 0);
-                console.log('💰 Expenses found:', firebaseData.expenses?.length || 0);
-                
-                // CRITICAL: Complete replacement, no merging that overwrites data
-                window.appData = firebaseData;
-                
-                // Ensure essential properties exist without overwriting existing data
-                if (!window.appData.fishTypes || window.appData.fishTypes.length === 0) {
-                    window.appData.fishTypes = getDefaultAppData().fishTypes;
-                }
-                if (!window.appData.expenseCategories || window.appData.expenseCategories.length === 0) {
-                    window.appData.expenseCategories = getDefaultAppData().expenseCategories;
-                }
-                if (!window.appData.ponds || window.appData.ponds.length === 0) {
-                    window.appData.ponds = getDefaultAppData().ponds;
-                }
-                
-                console.log('📋 Final transactions count:', window.appData.transactions?.length || 0);
-                console.log('💰 Final expenses count:', window.appData.expenses?.length || 0);
-                
-                // Update all displays
-                updateAllDisplays();
-                console.log('🔄 UI updated with Firebase data');
-                
-                // Also save to localStorage for offline use
-                try {
-                    localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
-                    console.log('💾 Data synced to localStorage');
-                } catch (e) {
-                    console.error('❌ localStorage sync error:', e);
-                }
-            } else {
-                console.log('ℹ️ No Firebase data found, loading from localStorage');
-                loadDataFromLocalStorage();
-            }
-        }).catch((error) => {
-            console.error('❌ Firebase load error:', error);
-            loadDataFromLocalStorage();
-        });
-    } else {
-        console.log('⚠️ No authenticated user - loading from localStorage only');
-        loadDataFromLocalStorage();
-    }
-}
-
-function loadDataFromLocalStorage() {
-    const savedData = localStorage.getItem('cochinAquaticsDataV2') || localStorage.getItem('cochinAquaticsData');
-    if (savedData) {
-        try {
-            const parsed = JSON.parse(savedData);
-            window.appData = { ...getDefaultAppData(), ...parsed };
-            updateAllDisplays();
-            console.log('💾 Local data loaded');
-        } catch (error) {
-            console.error('❌ Local load error:', error);
-            window.appData = getDefaultAppData();
-            updateAllDisplays();
-        }
-    } else {
-        console.log('ℹ️ No local data found, using defaults');
-        window.appData = getDefaultAppData();
-        updateAllDisplays();
-    }
-}
-
-// Override ALL save functions with the enhanced version
-window.saveData = enhancedSaveData;
-
-// OVERRIDE the existing auth state listener with WORKING version
-firebase.auth().onAuthStateChanged((user) => {
-    const authContainer = document.getElementById('authContainer');
-    const appContainer = document.getElementById('appContainer');
-    const userEmailElement = document.getElementById('userEmail');
-    
-    if (user) {
-        console.log('✅ User authenticated:', user.email);
-        globalCurrentUser = user; // Store user globally
-        if (authContainer) authContainer.style.display = 'none';
-        if (appContainer) appContainer.style.display = 'block';
-        if (userEmailElement) userEmailElement.textContent = user.email;
-        
-        // CRITICAL: Load user data immediately after authentication
-        setTimeout(() => {
-            console.log('🔄 Auto-loading user data...');
-            enhancedLoadData();
-        }, 500);
-        
-    } else {
-        console.log('❌ User not authenticated');
-        globalCurrentUser = null; // Clear user globally
-        if (authContainer) authContainer.style.display = 'block';
-        if (appContainer) appContainer.style.display = 'none';
-        
-        // Clear data when logged out for security
-        window.appData = getDefaultAppData();
-        updateAllDisplays();
-    }
+    console.log('✅ System initialized');
 });
 
-console.log('✅ CRITICAL FIX: Enhanced save/load data functions installed');
-// ===== END CRITICAL FIX =====
+// Make functions globally available
+window.unifiedSaveData = unifiedSaveData;
+window.addFishType = addFishType;
+window.removeFishType = removeFishType;
+window.addPerson = addPerson;
+window.removePerson = removePerson;
+window.switchTab = switchTab;
+window.changeDashboardPeriod = changeDashboardPeriod;
+window.changeReportPeriod = changeReportPeriod;
+window.updateDashboard = updateDashboard;
 
-        // ===== FINAL COMPLETE FIX: Dashboard & Settings Persistence =====
-        
-        // Fixed Dashboard Update Function
-        function fixedUpdateDashboard() {
-            console.log('🔄 Fixed dashboard update running...');
-            
-            if (!window.appData) {
-                console.log('❌ No appData found!');
-                return;
-            }
-            
-            const { startDate, endDate } = getDateRange(appData.currentDashboardPeriod);
-            
-            // Calculate totals manually with proper logic
-            let totalIncome = 0;
-            let totalExpense = 0;
-            
-            // Calculate from transactions
-            if (window.appData.transactions && Array.isArray(window.appData.transactions)) {
-                window.appData.transactions.forEach(t => {
-                    const tDate = new Date(t.date);
-                    if (tDate >= startDate && tDate < endDate) {
-                        if (t.type === 'sale') {
-                            totalIncome += t.totalAmount || 0;
-                        } else if (t.type === 'purchase') {
-                            totalExpense += t.totalAmount || 0;
-                        } else if (t.type === 'trading') {
-                            totalIncome += t.totalAmount || 0;
-                            totalExpense += t.totalCost || 0;
-                        }
-                    }
-                });
-            }
-            
-            // Calculate from expenses
-            if (window.appData.expenses && Array.isArray(window.appData.expenses)) {
-                window.appData.expenses.forEach(e => {
-                    const eDate = new Date(e.date);
-                    if (eDate >= startDate && eDate < endDate) {
-                        totalExpense += e.amount || 0;
-                    }
-                });
-            }
-            
-            const profit = totalIncome - totalExpense;
-            
-            console.log('💰 Dashboard Totals - Income:', totalIncome, 'Expense:', totalExpense, 'Profit:', profit);
-            
-            // Update labels
-            const periodText = appData.currentDashboardPeriod === 'today' ? "Today's" : 
-                              appData.currentDashboardPeriod === 'week' ? "This Week's" : 
-                              "This Month's";
-            
-            const periodLabel = document.getElementById('periodLabel');
-            const periodLabelExpense = document.getElementById('periodLabelExpense');
-            const periodLabelProfit = document.getElementById('periodLabelProfit');
-            
-            if (periodLabel) periodLabel.textContent = periodText;
-            if (periodLabelExpense) periodLabelExpense.textContent = periodText;
-            if (periodLabelProfit) periodLabelProfit.textContent = periodText;
-            
-            // Update dashboard elements
-            const incomeElement = document.getElementById('periodIncome');
-            const expenseElement = document.getElementById('periodExpense');
-            const profitElement = document.getElementById('periodProfit');
-            const pondsElement = document.getElementById('activePonds');
-            
-            if (incomeElement) {
-                incomeElement.textContent = `₹${totalIncome.toLocaleString('en-IN')}`;
-            }
-            if (expenseElement) {
-                expenseElement.textContent = `₹${totalExpense.toLocaleString('en-IN')}`;
-            }
-            if (profitElement) {
-                profitElement.textContent = `₹${profit.toLocaleString('en-IN')}`;
-            }
-            if (pondsElement && window.appData.ponds) {
-                pondsElement.textContent = window.appData.ponds.length;
-            }
-            
-            // Update recent transactions
-            fixedUpdateRecentTransactions();
-        }
+console.log('🎉 COMPLETE UNIFIED SYSTEM LOADED');
 
-        // Fixed Recent Transactions Update
-        function fixedUpdateRecentTransactions() {
-            const container = document.getElementById('recentTransactions');
-            if (!container) return;
-            
-            const allItems = [];
-            
-            // Add transactions
-            if (window.appData.transactions && Array.isArray(window.appData.transactions)) {
-                window.appData.transactions.forEach(t => {
-                    allItems.push({...t, category: 'transaction'});
-                });
-            }
-            
-            // Add expenses
-            if (window.appData.expenses && Array.isArray(window.appData.expenses)) {
-                window.appData.expenses.forEach(e => {
-                    allItems.push({...e, category: 'expense'});
-                });
-            }
-            
-            // Sort by date and take recent 10
-            allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
-            const recentItems = allItems.slice(0, 10);
-            
-            if (recentItems.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">📋</div>
-                        <p>No transactions yet. Start by adding a new transaction!</p>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = recentItems.map(item => {
-                    if (item.category === 'transaction') {
-                        let profitText = '';
-                        if (item.type === 'trading' && item.totalCost) {
-                            const profit = item.totalAmount - item.totalCost;
-                            profitText = `<br><small style="color: ${profit >= 0 ? 'green' : 'red'}">Profit: ₹${profit.toLocaleString('en-IN')}</small>`;
-                        }
-                        return `
-                            <div class="transaction-item">
-                                <div>
-                                    <strong>${item.personName || 'Unknown'}</strong><br>
-                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
-                                    ${profitText}
-                                </div>
-                                <div>
-                                    <span class="transaction-type type-${item.type}">${item.type}</span>
-                                    <strong>₹${item.totalAmount.toLocaleString('en-IN')}</strong>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="transaction-item">
-                                <div>
-                                    <strong>${item.category}: ${item.description || item.employeeName || ''}</strong><br>
-                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
-                                </div>
-                                <div>
-                                    <span class="transaction-type type-expense">expense</span>
-                                    <strong>₹${item.amount.toLocaleString('en-IN')}</strong>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }).join('');
-            }
-        }
-
-        // Fixed Settings Functions
-        function fixedAddFishType() {
-            const input = document.getElementById('newFishType');
-            const fishType = input.value.trim();
-            
-            if (fishType && !window.appData.fishTypes.includes(fishType)) {
-                window.appData.fishTypes.push(fishType);
-                console.log('🐟 Added fish type:', fishType);
-                
-                // Force save immediately
-                enhancedSaveData();
-                
-                input.value = '';
-                updateAllDisplays();
-                
-                console.log('✅ Fish type saved and displays updated');
-            }
-        }
-
-        function fixedAddPerson() {
-            const nameInput = document.getElementById('newPersonInput');
-            const typeSelect = document.getElementById('personType');
-            const name = nameInput.value.trim();
-            
-            if (name && !window.appData.people.find(p => p.name === name)) {
-                window.appData.people.push({
-                    name: name,
-                    type: typeSelect.value
-                });
-                console.log('👥 Added person:', name, typeSelect.value);
-                
-                // Force save immediately
-                enhancedSaveData();
-                
-                nameInput.value = '';
-                updateAllDisplays();
-                
-                console.log('✅ Person saved and displays updated');
-            }
-        }
-
-        function fixedRemoveFishType(fishType) {
-            window.appData.fishTypes = window.appData.fishTypes.filter(f => f !== fishType);
-            enhancedSaveData();
-            updateAllDisplays();
-            console.log('🗑️ Removed fish type:', fishType);
-        }
-
-        function fixedRemovePerson(name) {
-            window.appData.people = window.appData.people.filter(p => p.name !== name);
-            enhancedSaveData();
-            updateAllDisplays();
-            console.log('🗑️ Removed person:', name);
-        }
-
-        // Enhanced Pond Form Handler
-        function setupFixedPondForm() {
-            const addPondForm = document.getElementById('addPondForm');
-            if (addPondForm && !addPondForm.hasFixedHandler) {
-                addPondForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const pond = {
-                        id: window.appData.nextPondId++,
-                        name: document.getElementById('pondName').value,
-                        capacity: parseFloat(document.getElementById('pondCapacity').value) || 0,
-                        primaryFishType: document.getElementById('pondFishType').value
-                    };
-                    
-                    window.appData.ponds.push(pond);
-                    console.log('🏊 Added pond:', pond.name);
-                    
-                    // Force save immediately
-                    enhancedSaveData();
-                    
-                    // Close modal and reset form
-                    document.getElementById('addPondModal').classList.remove('active');
-                    this.reset();
-                    updateAllDisplays();
-                    
-                    console.log('✅ Pond saved and displays updated');
-                });
-                addPondForm.hasFixedHandler = true;
-            }
-        }
-
-        // Override ALL original functions with fixed versions
-        window.updateDashboard = fixedUpdateDashboard;
-        window.addFishType = fixedAddFishType;
-        window.addPerson = fixedAddPerson;
-        window.removeFishType = fixedRemoveFishType;
-        window.removePerson = fixedRemovePerson;
-
-        // Setup pond form when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(setupFixedPondForm, 1000);
-        });
-
-        // Also setup if already loaded
-        setTimeout(setupFixedPondForm, 1000);
-
-        console.log('✅ FINAL COMPLETE FIX: All dashboard and settings functions installed permanently');
-        // ===== END FINAL COMPLETE FIX =====
-
-        // ===== FINAL COMPLETE FIX: Dashboard & Settings Persistence =====
-        
-        // Fixed Dashboard Update Function
-        function fixedUpdateDashboard() {
-            console.log('🔄 Fixed dashboard update running...');
-            
-            if (!window.appData) {
-                console.log('❌ No appData found!');
-                return;
-            }
-            
-            const { startDate, endDate } = getDateRange(appData.currentDashboardPeriod);
-            
-            // Calculate totals manually with proper logic
-            let totalIncome = 0;
-            let totalExpense = 0;
-            
-            // Calculate from transactions
-            if (window.appData.transactions && Array.isArray(window.appData.transactions)) {
-                window.appData.transactions.forEach(t => {
-                    const tDate = new Date(t.date);
-                    if (tDate >= startDate && tDate < endDate) {
-                        if (t.type === 'sale') {
-                            totalIncome += t.totalAmount || 0;
-                        } else if (t.type === 'purchase') {
-                            totalExpense += t.totalAmount || 0;
-                        } else if (t.type === 'trading') {
-                            totalIncome += t.totalAmount || 0;
-                            totalExpense += t.totalCost || 0;
-                        }
-                    }
-                });
-            }
-            
-            // Calculate from expenses
-            if (window.appData.expenses && Array.isArray(window.appData.expenses)) {
-                window.appData.expenses.forEach(e => {
-                    const eDate = new Date(e.date);
-                    if (eDate >= startDate && eDate < endDate) {
-                        totalExpense += e.amount || 0;
-                    }
-                });
-            }
-            
-            const profit = totalIncome - totalExpense;
-            
-            console.log('💰 Dashboard Totals - Income:', totalIncome, 'Expense:', totalExpense, 'Profit:', profit);
-            
-            // Update labels
-            const periodText = appData.currentDashboardPeriod === 'today' ? "Today's" : 
-                              appData.currentDashboardPeriod === 'week' ? "This Week's" : 
-                              "This Month's";
-            
-            const periodLabel = document.getElementById('periodLabel');
-            const periodLabelExpense = document.getElementById('periodLabelExpense');
-            const periodLabelProfit = document.getElementById('periodLabelProfit');
-            
-            if (periodLabel) periodLabel.textContent = periodText;
-            if (periodLabelExpense) periodLabelExpense.textContent = periodText;
-            if (periodLabelProfit) periodLabelProfit.textContent = periodText;
-            
-            // Update dashboard elements
-            const incomeElement = document.getElementById('periodIncome');
-            const expenseElement = document.getElementById('periodExpense');
-            const profitElement = document.getElementById('periodProfit');
-            const pondsElement = document.getElementById('activePonds');
-            
-            if (incomeElement) {
-                incomeElement.textContent = `₹${totalIncome.toLocaleString('en-IN')}`;
-            }
-            if (expenseElement) {
-                expenseElement.textContent = `₹${totalExpense.toLocaleString('en-IN')}`;
-            }
-            if (profitElement) {
-                profitElement.textContent = `₹${profit.toLocaleString('en-IN')}`;
-            }
-            if (pondsElement && window.appData.ponds) {
-                pondsElement.textContent = window.appData.ponds.length;
-            }
-            
-            // Update recent transactions
-            fixedUpdateRecentTransactions();
-        }
-
-        // Fixed Recent Transactions Update
-        function fixedUpdateRecentTransactions() {
-            const container = document.getElementById('recentTransactions');
-            if (!container) return;
-            
-            const allItems = [];
-            
-            // Add transactions
-            if (window.appData.transactions && Array.isArray(window.appData.transactions)) {
-                window.appData.transactions.forEach(t => {
-                    allItems.push({...t, category: 'transaction'});
-                });
-            }
-            
-            // Add expenses
-            if (window.appData.expenses && Array.isArray(window.appData.expenses)) {
-                window.appData.expenses.forEach(e => {
-                    allItems.push({...e, category: 'expense'});
-                });
-            }
-            
-            // Sort by date and take recent 10
-            allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
-            const recentItems = allItems.slice(0, 10);
-            
-            if (recentItems.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">📋</div>
-                        <p>No transactions yet. Start by adding a new transaction!</p>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = recentItems.map(item => {
-                    if (item.category === 'transaction') {
-                        let profitText = '';
-                        if (item.type === 'trading' && item.totalCost) {
-                            const profit = item.totalAmount - item.totalCost;
-                            profitText = `<br><small style="color: ${profit >= 0 ? 'green' : 'red'}">Profit: ₹${profit.toLocaleString('en-IN')}</small>`;
-                        }
-                        return `
-                            <div class="transaction-item">
-                                <div>
-                                    <strong>${item.personName || 'Unknown'}</strong><br>
-                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
-                                    ${profitText}
-                                </div>
-                                <div>
-                                    <span class="transaction-type type-${item.type}">${item.type}</span>
-                                    <strong>₹${item.totalAmount.toLocaleString('en-IN')}</strong>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="transaction-item">
-                                <div>
-                                    <strong>${item.category}: ${item.description || item.employeeName || ''}</strong><br>
-                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
-                                </div>
-                                <div>
-                                    <span class="transaction-type type-expense">expense</span>
-                                    <strong>₹${item.amount.toLocaleString('en-IN')}</strong>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }).join('');
-            }
-        }
-
-        // Fixed Settings Functions
-        function fixedAddFishType() {
-            const input = document.getElementById('newFishType');
-            const fishType = input.value.trim();
-            
-            if (fishType && !window.appData.fishTypes.includes(fishType)) {
-                window.appData.fishTypes.push(fishType);
-                console.log('🐟 Added fish type:', fishType);
-                
-                // Force save immediately
-                enhancedSaveData();
-                
-                input.value = '';
-                updateAllDisplays();
-                
-                console.log('✅ Fish type saved and displays updated');
-            }
-        }
-
-        function fixedAddPerson() {
-            const nameInput = document.getElementById('newPersonInput');
-            const typeSelect = document.getElementById('personType');
-            const name = nameInput.value.trim();
-            
-            if (name && !window.appData.people.find(p => p.name === name)) {
-                window.appData.people.push({
-                    name: name,
-                    type: typeSelect.value
-                });
-                console.log('👥 Added person:', name, typeSelect.value);
-                
-                // Force save immediately
-                enhancedSaveData();
-                
-                nameInput.value = '';
-                updateAllDisplays();
-                
-                console.log('✅ Person saved and displays updated');
-            }
-        }
-
-        function fixedRemoveFishType(fishType) {
-            window.appData.fishTypes = window.appData.fishTypes.filter(f => f !== fishType);
-            enhancedSaveData();
-            updateAllDisplays();
-            console.log('🗑️ Removed fish type:', fishType);
-        }
-
-        function fixedRemovePerson(name) {
-            window.appData.people = window.appData.people.filter(p => p.name !== name);
-            enhancedSaveData();
-            updateAllDisplays();
-            console.log('🗑️ Removed person:', name);
-        }
-
-        // Enhanced Pond Form Handler
-        function setupFixedPondForm() {
-            const addPondForm = document.getElementById('addPondForm');
-            if (addPondForm && !addPondForm.hasFixedHandler) {
-                addPondForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const pond = {
-                        id: window.appData.nextPondId++,
-                        name: document.getElementById('pondName').value,
-                        capacity: parseFloat(document.getElementById('pondCapacity').value) || 0,
-                        primaryFishType: document.getElementById('pondFishType').value
-                    };
-                    
-                    window.appData.ponds.push(pond);
-                    console.log('🏊 Added pond:', pond.name);
-                    
-                    // Force save immediately
-                    enhancedSaveData();
-                    
-                    // Close modal and reset form
-                    document.getElementById('addPondModal').classList.remove('active');
-                    this.reset();
-                    updateAllDisplays();
-                    
-                    console.log('✅ Pond saved and displays updated');
-                });
-                addPondForm.hasFixedHandler = true;
-            }
-        }
-
-        // Override ALL original functions with fixed versions
-        window.updateDashboard = fixedUpdateDashboard;
-        window.addFishType = fixedAddFishType;
-        window.addPerson = fixedAddPerson;
-        window.removeFishType = fixedRemoveFishType;
-        window.removePerson = fixedRemovePerson;
-
-        // Setup pond form when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(setupFixedPondForm, 1000);
-        });
-
-        // Also setup if already loaded
-        setTimeout(setupFixedPondForm, 1000);
-
-        console.log('✅ FINAL COMPLETE FIX: All dashboard and settings functions installed permanently');
-        // ===== END FINAL COMPLETE FIX =====
+// ===== END COMPLETE UNIFIED SYSTEM =====
 
     </script>
 </body>
