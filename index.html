@@ -2862,6 +2862,265 @@
         console.log('✅ CRITICAL FIX: Enhanced save/load data functions installed');
         // ===== END CRITICAL FIX =====
 
+        // ===== FINAL COMPLETE FIX: Dashboard & Settings Persistence =====
+        
+        // Fixed Dashboard Update Function
+        function fixedUpdateDashboard() {
+            console.log('🔄 Fixed dashboard update running...');
+            
+            if (!window.appData) {
+                console.log('❌ No appData found!');
+                return;
+            }
+            
+            const { startDate, endDate } = getDateRange(appData.currentDashboardPeriod);
+            
+            // Calculate totals manually with proper logic
+            let totalIncome = 0;
+            let totalExpense = 0;
+            
+            // Calculate from transactions
+            if (window.appData.transactions && Array.isArray(window.appData.transactions)) {
+                window.appData.transactions.forEach(t => {
+                    const tDate = new Date(t.date);
+                    if (tDate >= startDate && tDate < endDate) {
+                        if (t.type === 'sale') {
+                            totalIncome += t.totalAmount || 0;
+                        } else if (t.type === 'purchase') {
+                            totalExpense += t.totalAmount || 0;
+                        } else if (t.type === 'trading') {
+                            totalIncome += t.totalAmount || 0;
+                            totalExpense += t.totalCost || 0;
+                        }
+                    }
+                });
+            }
+            
+            // Calculate from expenses
+            if (window.appData.expenses && Array.isArray(window.appData.expenses)) {
+                window.appData.expenses.forEach(e => {
+                    const eDate = new Date(e.date);
+                    if (eDate >= startDate && eDate < endDate) {
+                        totalExpense += e.amount || 0;
+                    }
+                });
+            }
+            
+            const profit = totalIncome - totalExpense;
+            
+            console.log('💰 Dashboard Totals - Income:', totalIncome, 'Expense:', totalExpense, 'Profit:', profit);
+            
+            // Update labels
+            const periodText = appData.currentDashboardPeriod === 'today' ? "Today's" : 
+                              appData.currentDashboardPeriod === 'week' ? "This Week's" : 
+                              "This Month's";
+            
+            const periodLabel = document.getElementById('periodLabel');
+            const periodLabelExpense = document.getElementById('periodLabelExpense');
+            const periodLabelProfit = document.getElementById('periodLabelProfit');
+            
+            if (periodLabel) periodLabel.textContent = periodText;
+            if (periodLabelExpense) periodLabelExpense.textContent = periodText;
+            if (periodLabelProfit) periodLabelProfit.textContent = periodText;
+            
+            // Update dashboard elements
+            const incomeElement = document.getElementById('periodIncome');
+            const expenseElement = document.getElementById('periodExpense');
+            const profitElement = document.getElementById('periodProfit');
+            const pondsElement = document.getElementById('activePonds');
+            
+            if (incomeElement) {
+                incomeElement.textContent = `₹${totalIncome.toLocaleString('en-IN')}`;
+            }
+            if (expenseElement) {
+                expenseElement.textContent = `₹${totalExpense.toLocaleString('en-IN')}`;
+            }
+            if (profitElement) {
+                profitElement.textContent = `₹${profit.toLocaleString('en-IN')}`;
+            }
+            if (pondsElement && window.appData.ponds) {
+                pondsElement.textContent = window.appData.ponds.length;
+            }
+            
+            // Update recent transactions
+            fixedUpdateRecentTransactions();
+        }
+
+        // Fixed Recent Transactions Update
+        function fixedUpdateRecentTransactions() {
+            const container = document.getElementById('recentTransactions');
+            if (!container) return;
+            
+            const allItems = [];
+            
+            // Add transactions
+            if (window.appData.transactions && Array.isArray(window.appData.transactions)) {
+                window.appData.transactions.forEach(t => {
+                    allItems.push({...t, category: 'transaction'});
+                });
+            }
+            
+            // Add expenses
+            if (window.appData.expenses && Array.isArray(window.appData.expenses)) {
+                window.appData.expenses.forEach(e => {
+                    allItems.push({...e, category: 'expense'});
+                });
+            }
+            
+            // Sort by date and take recent 10
+            allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const recentItems = allItems.slice(0, 10);
+            
+            if (recentItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <p>No transactions yet. Start by adding a new transaction!</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = recentItems.map(item => {
+                    if (item.category === 'transaction') {
+                        let profitText = '';
+                        if (item.type === 'trading' && item.totalCost) {
+                            const profit = item.totalAmount - item.totalCost;
+                            profitText = `<br><small style="color: ${profit >= 0 ? 'green' : 'red'}">Profit: ₹${profit.toLocaleString('en-IN')}</small>`;
+                        }
+                        return `
+                            <div class="transaction-item">
+                                <div>
+                                    <strong>${item.personName || 'Unknown'}</strong><br>
+                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
+                                    ${profitText}
+                                </div>
+                                <div>
+                                    <span class="transaction-type type-${item.type}">${item.type}</span>
+                                    <strong>₹${item.totalAmount.toLocaleString('en-IN')}</strong>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="transaction-item">
+                                <div>
+                                    <strong>${item.category}: ${item.description || item.employeeName || ''}</strong><br>
+                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
+                                </div>
+                                <div>
+                                    <span class="transaction-type type-expense">expense</span>
+                                    <strong>₹${item.amount.toLocaleString('en-IN')}</strong>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            }
+        }
+
+        // Fixed Settings Functions
+        function fixedAddFishType() {
+            const input = document.getElementById('newFishType');
+            const fishType = input.value.trim();
+            
+            if (fishType && !window.appData.fishTypes.includes(fishType)) {
+                window.appData.fishTypes.push(fishType);
+                console.log('🐟 Added fish type:', fishType);
+                
+                // Force save immediately
+                enhancedSaveData();
+                
+                input.value = '';
+                updateAllDisplays();
+                
+                console.log('✅ Fish type saved and displays updated');
+            }
+        }
+
+        function fixedAddPerson() {
+            const nameInput = document.getElementById('newPersonInput');
+            const typeSelect = document.getElementById('personType');
+            const name = nameInput.value.trim();
+            
+            if (name && !window.appData.people.find(p => p.name === name)) {
+                window.appData.people.push({
+                    name: name,
+                    type: typeSelect.value
+                });
+                console.log('👥 Added person:', name, typeSelect.value);
+                
+                // Force save immediately
+                enhancedSaveData();
+                
+                nameInput.value = '';
+                updateAllDisplays();
+                
+                console.log('✅ Person saved and displays updated');
+            }
+        }
+
+        function fixedRemoveFishType(fishType) {
+            window.appData.fishTypes = window.appData.fishTypes.filter(f => f !== fishType);
+            enhancedSaveData();
+            updateAllDisplays();
+            console.log('🗑️ Removed fish type:', fishType);
+        }
+
+        function fixedRemovePerson(name) {
+            window.appData.people = window.appData.people.filter(p => p.name !== name);
+            enhancedSaveData();
+            updateAllDisplays();
+            console.log('🗑️ Removed person:', name);
+        }
+
+        // Enhanced Pond Form Handler
+        function setupFixedPondForm() {
+            const addPondForm = document.getElementById('addPondForm');
+            if (addPondForm && !addPondForm.hasFixedHandler) {
+                addPondForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const pond = {
+                        id: window.appData.nextPondId++,
+                        name: document.getElementById('pondName').value,
+                        capacity: parseFloat(document.getElementById('pondCapacity').value) || 0,
+                        primaryFishType: document.getElementById('pondFishType').value
+                    };
+                    
+                    window.appData.ponds.push(pond);
+                    console.log('🏊 Added pond:', pond.name);
+                    
+                    // Force save immediately
+                    enhancedSaveData();
+                    
+                    // Close modal and reset form
+                    document.getElementById('addPondModal').classList.remove('active');
+                    this.reset();
+                    updateAllDisplays();
+                    
+                    console.log('✅ Pond saved and displays updated');
+                });
+                addPondForm.hasFixedHandler = true;
+            }
+        }
+
+        // Override ALL original functions with fixed versions
+        window.updateDashboard = fixedUpdateDashboard;
+        window.addFishType = fixedAddFishType;
+        window.addPerson = fixedAddPerson;
+        window.removeFishType = fixedRemoveFishType;
+        window.removePerson = fixedRemovePerson;
+
+        // Setup pond form when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(setupFixedPondForm, 1000);
+        });
+
+        // Also setup if already loaded
+        setTimeout(setupFixedPondForm, 1000);
+
+        console.log('✅ FINAL COMPLETE FIX: All dashboard and settings functions installed permanently');
+        // ===== END FINAL COMPLETE FIX =====
+
     }  // Close any remaining scope
 
     </script>
