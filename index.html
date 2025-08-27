@@ -315,18 +315,48 @@
                 return;
             }
 
-            container.innerHTML = recent.map(item => `
+            function updateRecentTransactions() {
+    try {
+        const container = document.getElementById('recentTransactions');
+        if (!container) return;
+
+        const recent = appData.transactions
+            .filter(t => t && t.date) // Filter out invalid transactions
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 10);
+        
+        if (recent.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No transactions yet. Start by adding a new transaction!</p></div>';
+            return;
+        }
+
+        container.innerHTML = recent.map(item => {
+            const amount = getAmount(item);
+            const description = item.description || 'Transaction';
+            const type = item.type || 'unknown';
+            const date = new Date(item.date).toLocaleDateString('en-IN');
+            
+            return `
                 <div class="transaction-item">
                     <div>
-                        <strong>${item.description || 'Transaction'}</strong><br>
-                        <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
+                        <strong>${description}</strong><br>
+                        <small>${date}</small>
                     </div>
                     <div>
-                        <span class="transaction-type type-${item.type}">${item.type}</span>
+                        <span class="transaction-type type-${type}">${type}</span>
                         <strong>₹${amount.toLocaleString('en-IN')}</strong>
                     </div>
                 </div>
-            `).join('');
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('❌ Recent transactions update failed:', error);
+        const container = document.getElementById('recentTransactions');
+        if (container) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>Loading transactions...</p></div>';
+        }
+    }
+}
         }
 
         function updateDropdowns() {
