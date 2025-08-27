@@ -587,3 +587,285 @@
     </div>
 
     <script>
+        // ===== COMPLETE UNIFIED DATA MANAGEMENT SYSTEM =====
+        
+        // Global state management
+        let appData = null;
+        let currentUser = null;
+        let isAuthenticated = false;
+
+        // Default data structure
+        function getDefaultAppData() {
+            return {
+                transactions: [],
+                expenses: [],
+                ponds: [
+                    {id: 1, name: 'Pond 1', capacity: 10000, primaryFishType: 'Gold Fish'},
+                    {id: 2, name: 'Pond 2', capacity: 8000, primaryFishType: 'Angel Fish'},
+                    {id: 3, name: 'Pond 3', capacity: 12000, primaryFishType: 'Carp'}
+                ],
+                fishTypes: ['Gold Fish', 'Angel Fish', 'Black Moors', 'Carp', 'Tetra', 'Guppy', 'Koi', 'Molly', 'Platy', 'Swordtail'],
+                people: [
+                    {name: 'Arjun', type: 'vendor'},
+                    {name: 'Ben', type: 'customer'},
+                    {name: 'Raj', type: 'both'}
+                ],
+                nextTransactionId: 1,
+                nextExpenseId: 1,
+                nextPondId: 4,
+                currentDashboardPeriod: 'today'
+            };
+        }
+
+        // ===== UNIFIED SAVE/LOAD SYSTEM =====
+        async function unifiedSaveData() {
+            console.log('💾 Unified save starting...');
+            
+            if (!appData) {
+                console.error('❌ No appData to save');
+                return false;
+            }
+
+            // Always save to localStorage first
+            try {
+                localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
+                console.log('✅ Local save successful');
+            } catch (error) {
+                console.error('❌ Local save failed:', error);
+            }
+
+            // Save to Firebase if authenticated
+            if (currentUser && currentUser.uid) {
+                try {
+                    console.log(`☁️ Saving to Firebase for user: ${currentUser.uid}`);
+                    const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
+                    await userRef.set(appData);
+                    console.log('✅ Firebase save successful');
+                    
+                    // Force UI update after successful save
+                    forceUIUpdate();
+                    return true;
+                } catch (error) {
+                    console.error('❌ Firebase save failed:', error);
+                    return false;
+                }
+            }
+            
+            // Force UI update even for local-only saves
+            forceUIUpdate();
+            return true;
+        }
+
+        async function unifiedLoadData() {
+            console.log('📥 Unified load starting...');
+
+            if (currentUser && currentUser.uid) {
+                try {
+                    console.log(`☁️ Loading from Firebase for user: ${currentUser.uid}`);
+                    const userRef = firebase.database().ref(`users/${currentUser.uid}/aquaticsData`);
+                    const snapshot = await userRef.once('value');
+                    const firebaseData = snapshot.val();
+
+                    if (firebaseData && typeof firebaseData === 'object') {
+                        console.log('✅ Firebase data loaded');
+                        console.log(`📊 Found: ${firebaseData.transactions?.length || 0} transactions, ${firebaseData.expenses?.length || 0} expenses`);
+                        
+                        // Complete replacement with Firebase data
+                        appData = { ...getDefaultAppData(), ...firebaseData };
+                        
+                        // Force UI update
+                        forceUIUpdate();
+                        
+                        // Save to localStorage as backup
+                        try {
+                            localStorage.setItem('cochinAquaticsDataV2', JSON.stringify(appData));
+                        } catch (e) {
+                            console.warn('⚠️ localStorage backup failed');
+                        }
+                        
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('❌ Firebase load failed:', error);
+                }
+            }
+
+            // Fallback to localStorage
+            try {
+                const localData = localStorage.getItem('cochinAquaticsDataV2');
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    appData = { ...getDefaultAppData(), ...parsed };
+                    console.log('💾 Local data loaded');
+                    forceUIUpdate();
+                    return true;
+                }
+            } catch (error) {
+                console.error('❌ Local load failed:', error);
+            }
+
+            // Last resort: default data
+            console.log('🔧 Using default data');
+            appData = getDefaultAppData();
+            forceUIUpdate();
+            return false;
+        }
+
+        // ===== FORCE UI UPDATE SYSTEM =====
+        function forceUIUpdate() {
+            console.log('🔄 Force UI update triggered');
+            
+            if (!appData) {
+                console.error('❌ No appData for UI update');
+                return;
+            }
+
+            try {
+                updateDashboard();
+                updateAllDropdowns();
+                updateSettingsLists();
+                console.log('✅ UI update complete');
+            } catch (error) {
+                console.error('❌ UI update failed:', error);
+            }
+        }
+
+        // ===== DASHBOARD UPDATE SYSTEM =====
+        function updateDashboard() {
+            if (!appData) return;
+
+            const { startDate, endDate } = getDateRange(appData.currentDashboardPeriod);
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            // Calculate from transactions
+            (appData.transactions || []).forEach(t => {
+                const tDate = new Date(t.date);
+                if (tDate >= startDate && tDate < endDate) {
+                    if (t.type === 'sale') {
+                        totalIncome += t.totalAmount || 0;
+                    } else if (t.type === 'purchase') {
+                        totalExpense += t.totalAmount || 0;
+                    }
+                }
+            });
+
+            // Calculate from expenses
+            (appData.expenses || []).forEach(e => {
+                const eDate = new Date(e.date);
+                if (eDate >= startDate && eDate < endDate) {
+                    totalExpense += e.amount || 0;
+                }
+            });
+
+            const profit = totalIncome - totalExpense;
+
+            // Update period labels
+            const periodText = appData.currentDashboardPeriod === 'today' ? "Today's" : 
+                              appData.currentDashboardPeriod === 'week' ? "This Week's" : "This Month's";
+
+            const elements = {
+                periodLabel: document.getElementById('periodLabel'),
+                periodLabelExpense: document.getElementById('periodLabelExpense'),
+                periodLabelProfit: document.getElementById('periodLabelProfit'),
+                periodIncome: document.getElementById('periodIncome'),
+                periodExpense: document.getElementById('periodExpense'),
+                periodProfit: document.getElementById('periodProfit'),
+                activePonds: document.getElementById('activePonds')
+            };
+
+            // Safe updates with null checks
+            if (elements.periodLabel) elements.periodLabel.textContent = periodText;
+            if (elements.periodLabelExpense) elements.periodLabelExpense.textContent = periodText;
+            if (elements.periodLabelProfit) elements.periodLabelProfit.textContent = periodText;
+            if (elements.periodIncome) elements.periodIncome.textContent = `₹${totalIncome.toLocaleString('en-IN')}`;
+            if (elements.periodExpense) elements.periodExpense.textContent = `₹${totalExpense.toLocaleString('en-IN')}`;
+            if (elements.periodProfit) elements.periodProfit.textContent = `₹${profit.toLocaleString('en-IN')}`;
+            if (elements.activePonds) elements.activePonds.textContent = (appData.ponds || []).length;
+
+            console.log(`💰 Dashboard updated: Income ₹${totalIncome}, Expense ₹${totalExpense}, Profit ₹${profit}`);
+
+            updateRecentTransactions();
+        }
+
+        function updateRecentTransactions() {
+            const container = document.getElementById('recentTransactions');
+            if (!container) return;
+
+            const allItems = [
+                ...(appData.transactions || []).map(t => ({...t, category: 'transaction'})),
+                ...(appData.expenses || []).map(e => ({...e, category: 'expense'}))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+
+            if (allItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <p>No transactions yet. Start by adding a new transaction!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = allItems.map(item => {
+                if (item.category === 'transaction') {
+                    return `
+                        <div class="transaction-item">
+                            <div>
+                                <strong>${item.description || 'Transaction'}</strong><br>
+                                <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
+                            </div>
+                            <div>
+                                <span class="transaction-type type-${item.type}">${item.type}</span>
+                                <strong>₹${item.totalAmount.toLocaleString('en-IN')}</strong>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="transaction-item">
+                            <div>
+                                <strong>${item.description || 'Expense'}</strong><br>
+                                <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
+                            </div>
+                            <div>
+                                <span class="transaction-type type-expense">expense</span>
+                                <strong>₹${item.amount.toLocaleString('en-IN')}</strong>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        // ===== QUICK TRANSACTION SYSTEM =====
+        async function addQuickTransaction() {
+            const type = document.getElementById('quickTransactionType').value;
+            const amount = parseFloat(document.getElementById('quickAmount').value);
+            const description = document.getElementById('quickDescription').value;
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount!');
+                return;
+            }
+
+            const transaction = {
+                id: appData.nextTransactionId++,
+                date: new Date().toISOString().split('T')[0],
+                type: type,
+                totalAmount: amount,
+                description: description || `${type} transaction`,
+                fishDetails: []
+            };
+
+            appData.transactions.push(transaction);
+            console.log(`✅ Added ${type} transaction: ₹${amount}`);
+
+            const saved = await unifiedSaveData();
+            if (saved) {
+                document.getElementById('quickAmount').value = '';
+                document.getElementById('quickDescription').value = '';
+                console.log('✅ Transaction saved successfully');
+            }
+        }
+        
