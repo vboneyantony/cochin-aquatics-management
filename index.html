@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cochin Aquatics Management System v2.0 - Multi-User</title>
     
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -731,7 +730,6 @@
     </style>
 </head>
 <body>
-    <!-- Authentication Container -->
     <div id="authContainer" class="auth-container">
         <h2 class="auth-title">Cochin Aquatics</h2>
         <p class="auth-subtitle">Sign in to access your business management system</p>
@@ -749,7 +747,6 @@
         </div>
     </div>
 
-    <!-- Main Application Container -->
     <div id="appContainer" class="container" style="display: none;">
         <div class="header">
             <div class="user-info" id="userInfo">
@@ -771,7 +768,6 @@
         </div>
 
         <div class="content">
-            <!-- Dashboard Tab -->
             <div id="dashboard" class="tab-content active">
                 <h2 style="margin-bottom: 20px; color: #2c3e50;">Financial Overview</h2>
                 
@@ -811,7 +807,6 @@
                 </div>
             </div>
 
-            <!-- Transaction Tab -->
             <div id="transaction" class="tab-content">
                 <div class="success-message" id="transactionSuccess">
                     Transaction added successfully!
@@ -901,7 +896,6 @@
                 </form>
             </div>
 
-            <!-- Expense Tab -->
             <div id="expense" class="tab-content">
                 <div class="success-message" id="expenseSuccess">
                     Expense added successfully!
@@ -963,7 +957,6 @@
                 </form>
             </div>
 
-            <!-- Ponds Tab -->
             <div id="ponds" class="tab-content">
                 <h2 style="margin-bottom: 20px; color: #2c3e50;">Pond Management</h2>
                 
@@ -973,11 +966,9 @@
                 </div>
 
                 <div class="pond-grid" id="pondGrid">
-                    <!-- Ponds will be loaded here -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Reports Tab -->
             <div id="reports" class="tab-content">
                 <h2 style="margin-bottom: 20px; color: #2c3e50;">Reports & Analytics</h2>
                 
@@ -1005,8 +996,7 @@
                 <div style="margin-top: 30px;">
                     <h3 style="margin-bottom: 15px; color: #2c3e50;">Pond-wise Profitability</h3>
                     <div id="pondProfitReport">
-                        <!-- Pond profit data will be loaded here -->
-                    </div>
+                        </div>
                 </div>
 
                 <div style="margin-top: 30px;">
@@ -1014,7 +1004,6 @@
                 </div>
             </div>
 
-            <!-- Settings Tab -->
             <div id="settings" class="tab-content">
                 <h2 style="margin-bottom: 20px; color: #2c3e50;">Settings & Configuration</h2>
                 
@@ -1028,8 +1017,7 @@
                         </div>
                     </div>
                     <div id="fishTypesList" class="list-container">
-                        <!-- Fish types will be listed here -->
-                    </div>
+                        </div>
                 </div>
 
                 <div class="form-section">
@@ -1047,8 +1035,7 @@
                         </div>
                     </div>
                     <div id="peopleList" class="list-container">
-                        <!-- People will be listed here -->
-                    </div>
+                        </div>
                 </div>
 
                 <div class="form-section" style="background: #ffebee;">
@@ -1067,7 +1054,6 @@
         </div>
     </div>
 
-    <!-- Add Pond Modal -->
     <div id="addPondModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1094,7 +1080,6 @@
         </div>
     </div>
 
-    <!-- Adjust Stock Modal -->
     <div id="adjustStockModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1156,7 +1141,12 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+        } catch (e) {
+            console.error('Firebase initialization error:', e);
+        }
+        
         const auth = firebase.auth();
         const database = firebase.database();
         console.log('Firebase initialized successfully!');
@@ -1197,16 +1187,16 @@
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
         }
 
-        function showSuccess(message) {
-            const el = document.getElementById('successMessage');
+        function showSuccessMessage(elementId, message) {
+            const el = document.getElementById(elementId);
             if (el) {
                 el.textContent = message;
                 el.classList.add('show');
                 setTimeout(() => el.classList.remove('show'), 3000);
             }
         }
-
-        function showError(message) {
+        
+        function showGlobalError(message) {
             const el = document.getElementById('authError');
             if (el) {
                 el.textContent = message;
@@ -1217,23 +1207,18 @@
 
         // Authentication Functions
         function initializeAuth() {
-            console.log('Initializing Firebase Authentication...');
-            
             auth.onAuthStateChanged(async (user) => {
                 if (user) {
-                    console.log('User authenticated:', user.email);
                     currentUser = user;
                     isAuthenticated = true;
                     showMainApp();
                     await loadUserData();
                 } else {
-                    console.log('User not authenticated');
                     currentUser = null;
                     isAuthenticated = false;
                     showAuthForm();
                 }
             });
-
             setupAuthForm();
         }
 
@@ -1241,7 +1226,6 @@
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('userEmail').textContent = currentUser.email;
-            updateAllDisplays();
         }
 
         function showAuthForm() {
@@ -1254,26 +1238,19 @@
             const authEmail = document.getElementById('authEmail');
             const authPassword = document.getElementById('authPassword');
             const toggleAuth = document.getElementById('toggleAuth');
-            const authError = document.getElementById('authError');
             const authLoading = document.getElementById('authLoading');
             
             let isSignUp = false;
 
             toggleAuth.addEventListener('click', () => {
                 isSignUp = !isSignUp;
-                if (isSignUp) {
-                    authSubmit.textContent = 'Sign Up';
-                    toggleAuth.innerHTML = 'Already have an account? <span>Sign In</span>';
-                } else {
-                    authSubmit.textContent = 'Sign In';
-                    toggleAuth.innerHTML = "Don't have an account? <span>Sign Up</span>";
-                }
+                authSubmit.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+                toggleAuth.innerHTML = isSignUp ? 'Already have an account? <span>Sign In</span>' : "Don't have an account? <span>Sign Up</span>";
                 hideAuthError();
             });
 
             authSubmit.addEventListener('click', async (e) => {
                 e.preventDefault();
-                
                 const email = authEmail.value.trim();
                 const password = authPassword.value;
                 
@@ -1288,14 +1265,11 @@
                 try {
                     if (isSignUp) {
                         await auth.createUserWithEmailAndPassword(email, password);
-                        console.log('User created successfully');
                         await initializeUserData();
                     } else {
                         await auth.signInWithEmailAndPassword(email, password);
-                        console.log('User signed in successfully');
                     }
                 } catch (error) {
-                    console.error('Authentication error:', error);
                     showAuthError(getAuthErrorMessage(error.code));
                 } finally {
                     showAuthLoading(false);
@@ -1305,7 +1279,6 @@
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 try {
                     await auth.signOut();
-                    console.log('User signed out');
                 } catch (error) {
                     console.error('Logout error:', error);
                 }
@@ -1325,21 +1298,15 @@
         function showAuthLoading(show) {
             document.getElementById('authLoading').style.display = show ? 'block' : 'none';
         }
-
+        
         function getAuthErrorMessage(errorCode) {
             switch (errorCode) {
-                case 'auth/user-not-found':
-                    return 'No account found with this email address.';
-                case 'auth/wrong-password':
-                    return 'Incorrect password.';
-                case 'auth/email-already-in-use':
-                    return 'An account with this email already exists.';
-                case 'auth/weak-password':
-                    return 'Password should be at least 6 characters.';
-                case 'auth/invalid-email':
-                    return 'Please enter a valid email address.';
-                default:
-                    return 'Authentication failed. Please try again.';
+                case 'auth/user-not-found': return 'No account found with this email address.';
+                case 'auth/wrong-password': return 'Incorrect password.';
+                case 'auth/email-already-in-use': return 'An account with this email already exists.';
+                case 'auth/weak-password': return 'Password should be at least 6 characters.';
+                case 'auth/invalid-email': return 'Please enter a valid email address.';
+                default: return 'Authentication failed. Please try again.';
             }
         }
 
@@ -1349,9 +1316,7 @@
         }
 
         async function initializeUserData() {
-            console.log('Initializing user data...');
             const userRef = getUserDataRef();
-            
             const defaultData = {
                 ...appData,
                 ponds: [
@@ -1366,50 +1331,35 @@
                 ],
                 nextPondId: 4
             };
-            
             await userRef.set(defaultData);
-            console.log('User data initialized');
+            appData = defaultData;
+            updateAllDisplays();
         }
 
         async function loadUserData() {
             if (!currentUser) return;
-            
-            console.log('Loading user data from Firebase...');
             try {
-                const userRef = getUserDataRef();
-                const snapshot = await userRef.once('value');
+                const snapshot = await getUserDataRef().once('value');
                 const userData = snapshot.val();
                 
                 if (userData) {
-                    appData = userData;
-                    console.log('User data loaded successfully');
+                    appData = { ...appData, ...userData }; // Merge to ensure new defaults are present
                 } else {
-                    console.log('No user data found, initializing...');
                     await initializeUserData();
                 }
-                
                 updateAllDisplays();
             } catch (error) {
-                console.error('Error loading user data:', error);
-                showError('Failed to load data. Please refresh the page.');
+                showGlobalError('Failed to load data. Please refresh the page.');
             }
         }
 
         async function saveData() {
-            if (!isAuthenticated || !currentUser) {
-                console.log('User not authenticated');
-                return false;
-            }
-
+            if (!isAuthenticated || !currentUser) return false;
             try {
-                console.log('Saving data to Firebase...');
-                const userRef = getUserDataRef();
-                await userRef.set(appData);
-                console.log('Data saved successfully');
+                await getUserDataRef().set(appData);
                 return true;
             } catch (error) {
-                console.error('Error saving data:', error);
-                showError('Failed to save data: ' + error.message);
+                showGlobalError('Failed to save data: ' + error.message);
                 return false;
             }
         }
@@ -1454,72 +1404,57 @@
                     startDate = new Date(now.getFullYear(), 0, 1);
                     endDate = new Date(now.getFullYear() + 1, 0, 1);
                     break;
+                default:
+                    startDate = today;
+                    endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000);
             }
-            
             return { startDate, endDate };
         }
 
         function updateDashboard() {
-            const { startDate, endDate } = getDateRange(appData.currentDashboardPeriod);
+            const { startDate, endDate } = getDateRange(appData.currentDashboardPeriod || 'today');
+            let income = 0, expense = 0;
             
-            let income = 0;
-            let expense = 0;
-            
-            appData.transactions.forEach(t => {
+            (appData.transactions || []).forEach(t => {
                 const tDate = new Date(t.date);
                 if (tDate >= startDate && tDate < endDate) {
-                    if (t.type === 'sale') {
-                        income += t.totalAmount;
-                    } else if (t.type === 'purchase') {
-                        expense += t.totalAmount;
-                    } else if (t.type === 'trading') {
+                    if (t.type === 'sale') income += t.totalAmount;
+                    else if (t.type === 'purchase') expense += t.totalAmount;
+                    else if (t.type === 'trading') {
                         income += t.totalAmount;
                         expense += t.totalCost || 0;
                     }
                 }
             });
             
-            appData.expenses.forEach(e => {
+            (appData.expenses || []).forEach(e => {
                 const eDate = new Date(e.date);
-                if (eDate >= startDate && eDate < endDate) {
-                    expense += e.amount;
-                }
+                if (eDate >= startDate && eDate < endDate) expense += e.amount;
             });
             
             const profit = income - expense;
-            
-            const periodText = appData.currentDashboardPeriod === 'today' ? "Today's" : 
-                              appData.currentDashboardPeriod === 'week' ? "This Week's" : 
-                              appData.currentDashboardPeriod === 'month' ? "This Month's" : 
-                              "This Year's";
+            const period = appData.currentDashboardPeriod || 'today';
+            const periodText = period.charAt(0).toUpperCase() + period.slice(1) + "'s";
             
             document.getElementById('periodLabel').textContent = periodText;
             document.getElementById('periodLabelExpense').textContent = periodText;
             document.getElementById('periodLabelProfit').textContent = periodText;
-            
             document.getElementById('periodIncome').textContent = formatMoney(income);
             document.getElementById('periodExpense').textContent = formatMoney(expense);
             document.getElementById('periodProfit').textContent = formatMoney(profit);
-            document.getElementById('activePonds').textContent = appData.ponds.length;
-            
+            document.getElementById('activePonds').textContent = (appData.ponds || []).length;
             updateRecentTransactions();
         }
 
         function updateRecentTransactions() {
             const container = document.getElementById('recentTransactions');
-            const allItems = [
-                ...appData.transactions.map(t => ({...t, category: 'transaction'})),
-                ...appData.expenses.map(e => ({...e, category: 'expense'}))
-            ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+            const transactions = appData.transactions || [];
+            const expenses = appData.expenses || [];
+            const allItems = [...transactions.map(t => ({...t, category: 'transaction'})), ...expenses.map(e => ({...e, category: 'expense'}))]
+                .sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
             
             if (allItems.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">📋</div>
-                        <h3>No transactions yet</h3>
-                        <p>Start by adding a new transaction!</p>
-                    </div>
-                `;
+                container.innerHTML = `<div class="empty-state"><div class="icon">📋</div><h3>No transactions yet</h3><p>Start by adding a new transaction!</p></div>`;
             } else {
                 container.innerHTML = allItems.map(item => {
                     if (item.category === 'transaction') {
@@ -1530,30 +1465,15 @@
                         }
                         return `
                             <div class="transaction-item">
-                                <div>
-                                    <strong>${item.personName || 'Unknown'}</strong><br>
-                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
-                                    ${profitText}
-                                </div>
-                                <div style="text-align: right;">
-                                    <span class="transaction-type type-${item.type}">${item.type}</span><br>
-                                    <strong>${formatMoney(item.totalAmount)}</strong>
-                                </div>
-                            </div>
-                        `;
+                                <div><strong>${item.personName || 'Unknown'}</strong><br><small>${new Date(item.date).toLocaleDateString('en-IN')}</small>${profitText}</div>
+                                <div style="text-align: right;"><span class="transaction-type type-${item.type}">${item.type}</span><br><strong>${formatMoney(item.totalAmount)}</strong></div>
+                            </div>`;
                     } else {
                         return `
                             <div class="transaction-item">
-                                <div>
-                                    <strong>${item.description || item.employeeName || ''}</strong><br>
-                                    <small>${new Date(item.date).toLocaleDateString('en-IN')}</small>
-                                </div>
-                                <div style="text-align: right;">
-                                    <span class="transaction-type type-expense">expense</span><br>
-                                    <strong>${formatMoney(item.amount)}</strong>
-                                </div>
-                            </div>
-                        `;
+                                <div><strong>${item.description || item.employeeName || 'Expense'}</strong><br><small>${new Date(item.date).toLocaleDateString('en-IN')}</small></div>
+                                <div style="text-align: right;"><span class="transaction-type type-expense">expense</span><br><strong>${formatMoney(item.amount)}</strong></div>
+                            </div>`;
                     }
                 }).join('');
             }
@@ -1561,44 +1481,31 @@
 
         // Transaction Functions
         function calculateTotals() {
-            let total = 0;
-            let totalCost = 0;
+            let total = 0, totalCost = 0;
             const transactionType = document.getElementById('transactionType').value;
             
             document.querySelectorAll('.fish-entry').forEach(entry => {
-                const quantity = parseFloat(entry.querySelector('.fish-quantity').value) || 0;
-                const rate = parseFloat(entry.querySelector('.fish-rate').value) || 0;
-                const buyRate = parseFloat(entry.querySelector('.fish-buy-rate')?.value) || 0;
+                const quantity = safeNumber(entry.querySelector('.fish-quantity').value);
+                const rate = safeNumber(entry.querySelector('.fish-rate').value);
+                const buyRate = safeNumber(entry.querySelector('.fish-buy-rate')?.value);
                 
-                const amount = quantity * rate;
-                total += amount;
-                
-                if (transactionType === 'trading' && buyRate > 0) {
-                    totalCost += quantity * buyRate;
-                }
+                total += quantity * rate;
+                if (transactionType === 'trading') totalCost += quantity * buyRate;
             });
             
-            document.getElementById('totalAmount').textContent = total.toLocaleString('en-IN');
-            
+            let totalText = total.toLocaleString('en-IN');
             if (transactionType === 'trading' && totalCost > 0) {
                 const profit = total - totalCost;
-                document.getElementById('totalAmount').textContent = 
-                    `${total.toLocaleString('en-IN')} (Profit: ${formatMoney(profit)})`;
+                totalText += ` (Profit: ${formatMoney(profit)})`;
             }
+            document.getElementById('totalAmount').textContent = totalText;
         }
 
         function addPondDistribution(entryNum) {
             const container = document.getElementById(`pondDist${entryNum}`);
             const newDist = document.createElement('div');
             newDist.className = 'pond-distribution-item';
-            newDist.innerHTML = `
-                <select class="pond-select">
-                    <option value="">Select Pond</option>
-                    ${appData.ponds.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                </select>
-                <input type="number" class="pond-quantity" placeholder="Quantity">
-                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
-            `;
+            newDist.innerHTML = `<select class="pond-select"><option value="">Select Pond</option>${(appData.ponds || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select><input type="number" class="pond-quantity" placeholder="Quantity"><button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>`;
             container.appendChild(newDist);
         }
 
@@ -1606,129 +1513,64 @@
             fishEntryCount++;
             const container = document.getElementById('fishEntries');
             const transactionType = document.getElementById('transactionType').value;
-            
             const newEntry = document.createElement('div');
             newEntry.className = 'fish-entry';
-            newEntry.innerHTML = `
-                <h4>
-                    <span><span class="fish-icon">🐟</span> Fish Details #${fishEntryCount}</span>
-                    <button class="remove-btn" onclick="removeFishEntry(this)">Remove</button>
-                </h4>
+            newEntry.innerHTML = `<h4><span><span class="fish-icon">🐟</span> Fish Details #${fishEntryCount}</span><button class="remove-btn" onclick="removeFishEntry(this)">Remove</button></h4>
                 <div class="row">
-                    <div class="form-group">
-                        <label>Fish Type</label>
-                        <select class="fish-type" required onchange="calculateTotals()">
-                            <option value="">Select Fish</option>
-                            ${appData.fishTypes.map(f => `<option value="${f}">${f}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Quantity</label>
-                        <input type="number" class="fish-quantity" placeholder="e.g., 1000" required onchange="calculateTotals()">
-                    </div>
-                    <div class="form-group">
-                        <label class="rate-label">${transactionType === 'trading' ? 'Sell Rate (₹)' : 'Rate per Fish (₹)'}</label>
-                        <input type="number" step="0.01" class="fish-rate" placeholder="e.g., 1.5" required onchange="calculateTotals()">
-                    </div>
-                    ${transactionType === 'trading' ? `
-                    <div class="form-group trading-field">
-                        <label>Buy Rate (₹)</label>
-                        <input type="number" step="0.01" class="fish-buy-rate" placeholder="e.g., 1.2" onchange="calculateTotals()">
-                    </div>` : ''}
+                    <div class="form-group"><label>Fish Type</label><select class="fish-type" required onchange="calculateTotals()"><option value="">Select Fish</option>${(appData.fishTypes || []).map(f => `<option value="${f}">${f}</option>`).join('')}</select></div>
+                    <div class="form-group"><label>Quantity</label><input type="number" class="fish-quantity" placeholder="e.g., 1000" required onchange="calculateTotals()"></div>
+                    <div class="form-group"><label class="rate-label">${transactionType === 'trading' ? 'Sell Rate (₹)' : 'Rate per Fish (₹)'}</label><input type="number" step="0.01" class="fish-rate" placeholder="e.g., 1.5" required onchange="calculateTotals()"></div>
+                    ${transactionType === 'trading' ? `<div class="form-group trading-field"><label>Buy Rate (₹)</label><input type="number" step="0.01" class="fish-buy-rate" placeholder="e.g., 1.2" onchange="calculateTotals()"></div>` : ''}
                 </div>
-                ${transactionType !== 'trading' ? `
-                <div class="pond-section">
-                    <label class="pond-label">${transactionType === 'sale' ? 'Sold from Pond' : 'Assign to Pond'}</label>
-                    <div class="pond-distribution" id="pondDist${fishEntryCount}">
-                        <div class="pond-distribution-item">
-                            <select class="pond-select">
-                                <option value="">Select Pond</option>
-                                ${appData.ponds.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                            </select>
-                            <input type="number" class="pond-quantity" placeholder="Quantity">
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-sm" onclick="addPondDistribution(${fishEntryCount})" style="padding: 5px 10px; font-size: 12px;">+ Add Another Pond</button>
-                </div>` : ''}
-            `;
+                ${transactionType !== 'trading' ? `<div class="pond-section"><label class="pond-label">${transactionType === 'sale' ? 'Sold from Pond' : 'Assign to Pond'}</label><div class="pond-distribution" id="pondDist${fishEntryCount}"><div class="pond-distribution-item"><select class="pond-select"><option value="">Select Pond</option>${(appData.ponds || []).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select><input type="number" class="pond-quantity" placeholder="Quantity"></div></div><button type="button" class="btn btn-sm" onclick="addPondDistribution(${fishEntryCount})" style="padding: 5px 10px; font-size: 12px;">+ Add Another Pond</button></div>` : ''}`;
             container.appendChild(newEntry);
         }
 
         function removeFishEntry(button) {
             button.closest('.fish-entry').remove();
-            fishEntryCount--;
             calculateTotals();
         }
 
         function calculatePondStock(pondId, fishType) {
             let stock = 0;
-            
-            appData.transactions.forEach(t => {
-                if (t.fishDetails) {
-                    t.fishDetails.forEach(f => {
-                        if (f.pondId == pondId && f.type === fishType) {
-                            if (t.type === 'purchase') {
-                                stock += f.quantity;
-                            } else if (t.type === 'sale') {
-                                stock -= f.quantity;
-                            }
-                        }
-                    });
-                }
+            (appData.transactions || []).forEach(t => {
+                (t.fishDetails || []).forEach(f => {
+                    if (f.pondId == pondId && f.type === fishType) {
+                        if (t.type === 'purchase') stock += f.quantity;
+                        else if (t.type === 'sale') stock -= f.quantity;
+                    }
+                });
             });
-            
             (appData.stockAdjustments || []).forEach(a => {
-                if (a.pondId == pondId && a.fishType === fishType) {
-                    stock += a.quantity;
-                }
+                if (a.pondId == pondId && a.fishType === fishType) stock += a.quantity;
             });
-            
             return stock;
         }
 
         function updateTransactionForm() {
             const type = document.getElementById('transactionType').value;
-            const personLabel = document.getElementById('personLabel');
-            
-            if (type === 'purchase') {
-                personLabel.textContent = 'Vendor Name';
-            } else if (type === 'sale') {
-                personLabel.textContent = 'Customer Name';
-            } else if (type === 'trading') {
-                personLabel.textContent = 'Customer Name';
-            }
-            
-            document.querySelectorAll('.fish-entry').forEach((entry, index) => {
-                const rateLabel = entry.querySelector('.rate-label');
+            document.getElementById('personLabel').textContent = type === 'purchase' ? 'Vendor Name' : 'Customer Name';
+            document.querySelectorAll('.fish-entry').forEach(entry => {
+                entry.querySelector('.rate-label').textContent = type === 'trading' ? 'Sell Rate (₹)' : 'Rate per Fish (₹)';
                 const pondSection = entry.querySelector('.pond-section');
-                const pondLabel = entry.querySelector('.pond-label');
-                let tradingField = entry.querySelector('.trading-field');
+                const tradingField = entry.querySelector('.trading-field');
                 
                 if (type === 'trading') {
-                    if (rateLabel) rateLabel.textContent = 'Sell Rate (₹)';
                     if (pondSection) pondSection.style.display = 'none';
-                    
                     if (!tradingField) {
                         const buyRateDiv = document.createElement('div');
                         buyRateDiv.className = 'form-group trading-field';
-                        buyRateDiv.innerHTML = `
-                            <label>Buy Rate (₹)</label>
-                            <input type="number" step="0.01" class="fish-buy-rate" placeholder="e.g., 1.2" onchange="calculateTotals()">
-                        `;
+                        buyRateDiv.innerHTML = `<label>Buy Rate (₹)</label><input type="number" step="0.01" class="fish-buy-rate" placeholder="e.g., 1.2" onchange="calculateTotals()">`;
                         entry.querySelector('.row').appendChild(buyRateDiv);
-                    } else {
-                        tradingField.style.display = 'block';
-                    }
+                    } else tradingField.style.display = 'block';
                 } else {
-                    if (rateLabel) rateLabel.textContent = 'Rate per Fish (₹)';
-                    if (pondSection) pondSection.style.display = 'block';
-                    if (pondLabel) {
-                        pondLabel.textContent = type === 'sale' ? 'Sold from Pond' : 'Assign to Pond';
+                    if (pondSection) {
+                        pondSection.style.display = 'block';
+                        pondSection.querySelector('.pond-label').textContent = type === 'sale' ? 'Sold from Pond' : 'Assign to Pond';
                     }
                     if (tradingField) tradingField.style.display = 'none';
                 }
             });
-            
             calculateTotals();
         }
 
@@ -1741,24 +1583,15 @@
         function updateExpenseCategoryDropdown() {
             const select = document.getElementById('expenseCategory');
             if (select) {
-                select.innerHTML = `
-                    <option value="">Select Category</option>
-                    ${appData.expenseCategories.map(c => `<option value="${c}">${c}</option>`).join('')}
-                    <option value="__new__">Add New Category</option>
-                `;
-                
-                select.onchange = function() {
-                    document.getElementById('newCategoryDiv').style.display = 
-                        this.value === '__new__' ? 'flex' : 'none';
-                };
+                select.innerHTML = `<option value="">Select Category</option>${(appData.expenseCategories || []).map(c => `<option value="${c}">${c}</option>`).join('')}<option value="__new__">Add New Category</option>`;
+                select.onchange = () => document.getElementById('newCategoryDiv').style.display = select.value === '__new__' ? 'flex' : 'none';
             }
         }
 
         function addNewCategory() {
             const input = document.getElementById('newCategoryInput');
             const category = input.value.trim();
-            
-            if (category && !appData.expenseCategories.includes(category)) {
+            if (category && !(appData.expenseCategories || []).includes(category)) {
                 appData.expenseCategories.push(category);
                 saveData();
                 input.value = '';
@@ -1768,322 +1601,139 @@
             }
         }
 
-        // Dropdown Updates
+        // Dropdown & UI List Updates
         function updateFishTypeDropdowns() {
-            document.querySelectorAll('.fish-type').forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = `
-                    <option value="">Select Fish</option>
-                    ${appData.fishTypes.map(f => `<option value="${f}">${f}</option>`).join('')}
-                `;
-                select.value = currentValue;
+            const fishTypes = appData.fishTypes || [];
+            document.querySelectorAll('.fish-type, #pondFishType, #adjustFishType').forEach(select => {
+                if(select) {
+                    const currentValue = select.value;
+                    select.innerHTML = `<option value="">Select Fish</option>${fishTypes.map(f => `<option value="${f}">${f}</option>`).join('')}`;
+                    select.value = currentValue;
+                }
             });
-            
-            const pondFishSelect = document.getElementById('pondFishType');
-            if (pondFishSelect) {
-                pondFishSelect.innerHTML = `
-                    <option value="">Select Fish Type</option>
-                    ${appData.fishTypes.map(f => `<option value="${f}">${f}</option>`).join('')}
-                `;
-            }
-
-            const adjustFishSelect = document.getElementById('adjustFishType');
-            if (adjustFishSelect) {
-                adjustFishSelect.innerHTML = `
-                    <option value="">Select Fish</option>
-                    ${appData.fishTypes.map(f => `<option value="${f}">${f}</option>`).join('')}
-                `;
-            }
         }
 
         function updatePondDropdowns() {
-            const pondSelects = [
-                ...document.querySelectorAll('.pond-select'),
-                document.getElementById('expensePond'),
-                document.getElementById('adjustPond')
-            ];
-            
-            pondSelects.forEach(select => {
-                if (select) {
+            const ponds = appData.ponds || [];
+            document.querySelectorAll('.pond-select, #expensePond, #adjustPond').forEach(select => {
+                if(select) {
                     const currentValue = select.value;
-                    select.innerHTML = `
-                        <option value="">Select Pond</option>
-                        ${appData.ponds.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                    `;
+                    select.innerHTML = `<option value="">Select Pond</option>${ponds.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}`;
                     select.value = currentValue;
                 }
             });
         }
 
         function updatePersonDropdowns() {
+            const people = appData.people || [];
             const select = document.getElementById('personName');
             if (select) {
-                select.innerHTML = `
-                    <option value="">Select or Add New</option>
-                    ${appData.people.map(p => `<option value="${p.name}">${p.name} (${p.type})</option>`).join('')}
-                `;
+                select.innerHTML = `<option value="">Select or Add New</option>${people.map(p => `<option value="${p.name}">${p.name} (${p.type})</option>`).join('')}`;
             }
         }
 
         function updatePondGrid() {
             const grid = document.getElementById('pondGrid');
             if (!grid) return;
-            
-            if (appData.ponds.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
-                        <div class="icon">🏊</div>
-                        <h3>No ponds added yet</h3>
-                        <p>Click "Add New Pond" to get started!</p>
-                    </div>
-                `;
-            } else {
-                grid.innerHTML = appData.ponds.map(pond => {
-                    const stockByFish = {};
-                    let investment = 0;
-                    let revenue = 0;
-                    let expenses = 0;
-                    
-                    appData.transactions.forEach(t => {
-                        if (t.fishDetails) {
-                            t.fishDetails.forEach(f => {
-                                if (f.pondId == pond.id) {
-                                    if (!stockByFish[f.type]) stockByFish[f.type] = 0;
-                                    
-                                    if (t.type === 'purchase') {
-                                        stockByFish[f.type] += f.quantity;
-                                        investment += f.amount;
-                                    } else if (t.type === 'sale') {
-                                        stockByFish[f.type] -= f.quantity;
-                                        revenue += f.amount;
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    
-                    (appData.stockAdjustments || []).forEach(a => {
-                        if (a.pondId == pond.id) {
-                            if (!stockByFish[a.fishType]) stockByFish[a.fishType] = 0;
-                            stockByFish[a.fishType] += a.quantity;
-                        }
-                    });
-                    
-                    appData.expenses.forEach(e => {
-                        if (e.pondId == pond.id) {
-                            expenses += e.amount;
-                        }
-                    });
-                    
-                    const totalFish = Object.values(stockByFish).reduce((sum, count) => sum + Math.max(0, count), 0);
-                    const fishTypes = Object.keys(stockByFish).filter(f => stockByFish[f] > 0);
-                    const profit = revenue - investment - expenses;
-                    
-                    return `
-                        <div class="pond-card">
-                            <button class="edit-pond-btn" onclick="showAdjustStockModal()">✏️</button>
-                            <h3>${pond.name}</h3>
-                            <div class="count">${totalFish.toLocaleString('en-IN')}</div>
-                            <small>Fish Count</small>
-                            ${fishTypes.length > 0 ? `
-                                <div class="fish-types">
-                                    ${fishTypes.slice(0, 3).join(', ')}
-                                    ${fishTypes.length > 3 ? ` +${fishTypes.length - 3} more` : ''}
-                                </div>
-                            ` : '<div class="fish-types">No fish</div>'}
-                            <div style="margin-top: 10px; font-size: 12px;">
-                                Capacity: ${pond.capacity.toLocaleString('en-IN')}<br>
-                                Investment: ${formatMoney(investment)}<br>
-                                Profit: <span style="color: ${profit >= 0 ? '#38ef7d' : '#f5576c'}">${formatMoney(profit)}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
+            const ponds = appData.ponds || [];
 
+            if (ponds.length === 0) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1;"><div class="icon">🏊</div><h3>No ponds added yet</h3><p>Click "Add New Pond" to get started!</p></div>`;
+                return;
+            }
+            grid.innerHTML = ponds.map(pond => {
+                let stockByFish = {}, investment = 0, revenue = 0, expenses = 0;
+                (appData.transactions || []).forEach(t => (t.fishDetails || []).forEach(f => {
+                    if (f.pondId == pond.id) {
+                        stockByFish[f.type] = (stockByFish[f.type] || 0) + (t.type === 'purchase' ? f.quantity : -f.quantity);
+                        if (t.type === 'purchase') investment += f.amount; else if (t.type === 'sale') revenue += f.amount;
+                    }
+                }));
+                (appData.stockAdjustments || []).forEach(a => {
+                    if (a.pondId == pond.id) stockByFish[a.fishType] = (stockByFish[a.fishType] || 0) + a.quantity;
+                });
+                (appData.expenses || []).forEach(e => { if (e.pondId == pond.id) expenses += e.amount; });
+
+                const totalFish = Object.values(stockByFish).reduce((sum, count) => sum + Math.max(0, count), 0);
+                const fishTypes = Object.keys(stockByFish).filter(f => stockByFish[f] > 0);
+                const profit = revenue - investment - expenses;
+
+                return `<div class="pond-card"><button class="edit-pond-btn" onclick="showAdjustStockModal()">✏️</button><h3>${pond.name}</h3><div class="count">${totalFish.toLocaleString('en-IN')}</div><small>Fish Count</small>${fishTypes.length > 0 ? `<div class="fish-types">${fishTypes.slice(0,3).join(', ')}${fishTypes.length > 3 ? ` +${fishTypes.length-3} more` : ''}</div>` : '<div class="fish-types">No fish</div>'}<div style="margin-top: 10px; font-size: 12px;">Capacity: ${pond.capacity.toLocaleString('en-IN')}<br>Profit: <span style="color: ${profit >= 0 ? '#38ef7d' : '#f5576c'}">${formatMoney(profit)}</span></div></div>`;
+            }).join('');
+        }
+        
         function updateReports() {
-            const { startDate, endDate } = getDateRange(appData.currentReportPeriod);
+            const { startDate, endDate } = getDateRange(appData.currentReportPeriod || 'month');
+            let income = 0, expense = 0;
             
-            let income = 0;
-            let expense = 0;
-            
-            appData.transactions.forEach(t => {
+            (appData.transactions || []).forEach(t => {
                 const tDate = new Date(t.date);
                 if (tDate >= startDate && tDate < endDate) {
-                    if (t.type === 'sale') {
-                        income += t.totalAmount;
-                    } else if (t.type === 'purchase') {
-                        expense += t.totalAmount;
-                    } else if (t.type === 'trading') {
+                    if (t.type === 'sale') income += t.totalAmount;
+                    else if (t.type === 'purchase') expense += t.totalAmount;
+                    else if (t.type === 'trading') {
                         income += t.totalAmount;
                         expense += t.totalCost || 0;
                     }
                 }
             });
-            
-            appData.expenses.forEach(e => {
+            (appData.expenses || []).forEach(e => {
                 const eDate = new Date(e.date);
-                if (eDate >= startDate && eDate < endDate) {
-                    expense += e.amount;
-                }
+                if (eDate >= startDate && eDate < endDate) expense += e.amount;
             });
-            
             const profit = income - expense;
-            
-            const periodText = appData.currentReportPeriod === 'month' ? 'This Month' :
-                              appData.currentReportPeriod === 'quarter' ? 'This Quarter' :
-                              'This Year';
-            
-            document.getElementById('reportPeriodLabel').textContent = periodText;
-            document.getElementById('reportPeriodLabelExpense').textContent = periodText;
-            document.getElementById('reportPeriodLabelProfit').textContent = periodText;
-            
+            const period = appData.currentReportPeriod || 'month';
+            const periodText = `This ${period.charAt(0).toUpperCase() + period.slice(1)}`;
+
+            ['reportPeriodLabel', 'reportPeriodLabelExpense', 'reportPeriodLabelProfit'].forEach(id => document.getElementById(id).textContent = periodText);
             document.getElementById('reportIncome').textContent = formatMoney(income);
             document.getElementById('reportExpense').textContent = formatMoney(expense);
             document.getElementById('reportProfit').textContent = formatMoney(profit);
             
             const pondProfitReport = document.getElementById('pondProfitReport');
             if (pondProfitReport) {
-                const pondProfits = appData.ponds.map(pond => {
-                    let income = 0;
-                    let expense = 0;
-                    
-                    appData.transactions.forEach(t => {
-                        const tDate = new Date(t.date);
-                        if (tDate >= startDate && tDate < endDate && t.fishDetails) {
-                            t.fishDetails.forEach(f => {
-                                if (f.pondId == pond.id) {
-                                    if (t.type === 'sale') {
-                                        income += f.amount;
-                                    } else if (t.type === 'purchase') {
-                                        expense += f.amount;
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    
-                    appData.expenses.forEach(e => {
-                        const eDate = new Date(e.date);
-                        if (eDate >= startDate && eDate < endDate && e.pondId == pond.id) {
-                            expense += e.amount;
-                        }
-                    });
-                    
-                    return {
-                        name: pond.name,
-                        income: income,
-                        expense: expense,
-                        profit: income - expense
-                    };
+                const pondProfits = (appData.ponds || []).map(pond => {
+                    let income = 0, expense = 0;
+                    (appData.transactions || []).forEach(t => { if(new Date(t.date) >= startDate && new Date(t.date) < endDate && t.fishDetails) t.fishDetails.forEach(f => { if(f.pondId == pond.id) { if(t.type === 'sale') income += f.amount; else if (t.type === 'purchase') expense += f.amount; } }) });
+                    (appData.expenses || []).forEach(e => { if(new Date(e.date) >= startDate && new Date(e.date) < endDate && e.pondId == pond.id) expense += e.amount; });
+                    return { name: pond.name, income, expense, profit: income - expense };
                 });
-                
-                pondProfitReport.innerHTML = `
-                    <div class="transaction-list">
-                        ${pondProfits.map(p => `
-                            <div class="transaction-item">
-                                <div>
-                                    <strong>${p.name}</strong><br>
-                                    <small>Income: ${formatMoney(p.income)} | Expense: ${formatMoney(p.expense)}</small>
-                                </div>
-                                <div>
-                                    <strong style="color: ${p.profit >= 0 ? '#28a745' : '#dc3545'}">
-                                        ${formatMoney(p.profit)}
-                                    </strong>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
+                pondProfitReport.innerHTML = `<div class="transaction-list">${pondProfits.map(p => `<div class="transaction-item"><div><strong>${p.name}</strong><br><small>Income: ${formatMoney(p.income)} | Expense: ${formatMoney(p.expense)}</small></div><div><strong style="color: ${p.profit >= 0 ? '#28a745':'#dc3545'}">${formatMoney(p.profit)}</strong></div></div>`).join('')}</div>`;
             }
         }
-
+        
         function updateSettingsLists() {
             const fishTypesList = document.getElementById('fishTypesList');
             if (fishTypesList) {
-                if (appData.fishTypes.length === 0) {
-                    fishTypesList.innerHTML = `
-                        <div class="empty-state">
-                            <div class="icon">🐟</div>
-                            <h3>No fish types added</h3>
-                            <p>Add fish types to organize your inventory.</p>
-                        </div>`;
-                } else {
-                    fishTypesList.innerHTML = appData.fishTypes.map(f => `
-                        <div class="list-item">
-                            <span>🐟 ${f}</span>
-                            <button class="btn btn-danger" onclick="removeFishType('${f}')">Remove</button>
-                        </div>
-                    `).join('');
-                }
+                const fishTypes = appData.fishTypes || [];
+                fishTypesList.innerHTML = fishTypes.length === 0 ? `<div class="empty-state"><div class="icon">🐟</div><h3>No fish types</h3></div>` : fishTypes.map(f => `<div class="list-item"><span>🐟 ${f}</span><button class="btn btn-danger" onclick="removeFishType('${f}')">Remove</button></div>`).join('');
             }
-            
             const peopleList = document.getElementById('peopleList');
             if (peopleList) {
-                if (appData.people.length === 0) {
-                    peopleList.innerHTML = `
-                        <div class="empty-state">
-                            <div class="icon">👥</div>
-                            <h3>No people added</h3>
-                            <p>Add customers and suppliers for transaction tracking.</p>
-                        </div>`;
-                } else {
-                    peopleList.innerHTML = appData.people.map(p => `
-                        <div class="list-item">
-                            <div>
-                                <div style="font-weight: 600;">${p.name}</div>
-                                <div style="font-size: 12px; text-transform: capitalize; color: #6c757d;">${p.type}</div>
-                            </div>
-                            <button class="btn btn-danger" onclick="removePerson('${p.name}')">Remove</button>
-                        </div>
-                    `).join('');
-                }
+                const people = appData.people || [];
+                peopleList.innerHTML = people.length === 0 ? `<div class="empty-state"><div class="icon">👥</div><h3>No people added</h3></div>` : people.map(p => `<div class="list-item"><div><div style="font-weight: 600;">${p.name}</div><div style="font-size: 12px; text-transform: capitalize; color: #6c757d;">${p.type}</div></div><button class="btn btn-danger" onclick="removePerson('${p.name}')">Remove</button></div>`).join('');
             }
         }
 
-        // Tab Management
+        // Tab & Period Management
         function switchTab(tabName) {
-            console.log('Switching to tab:', tabName);
-            
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            const selectedTab = document.getElementById(tabName);
-            if (selectedTab) {
-                selectedTab.classList.add('active');
-                
-                const tabButton = document.querySelector(`.tab[data-tab="${tabName}"]`);
-                if (tabButton) {
-                    tabButton.classList.add('active');
-                }
-                
-                updateAllDisplays();
+            document.querySelectorAll('.tab-content, .tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+            if (tabName !== 'transaction') updateAllDisplays();
+        }
+
+        function changePeriod(type, period, btn) {
+            if (type === 'dashboard') {
+                appData.currentDashboardPeriod = period;
+                document.querySelectorAll('#dashboard .period-btn').forEach(b => b.classList.remove('active'));
+                updateDashboard();
+            } else {
+                appData.currentReportPeriod = period;
+                document.querySelectorAll('#reports .period-btn').forEach(b => b.classList.remove('active'));
+                updateReports();
             }
-        }
-
-        function changeDashboardPeriod(period, btn) {
-            appData.currentDashboardPeriod = period;
-            document.querySelectorAll('#dashboard .period-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            if (btn) btn.classList.add('active');
-            updateDashboard();
-            saveData();
-        }
-
-        function changeReportPeriod(period, btn) {
-            appData.currentReportPeriod = period;
-            document.querySelectorAll('#reports .period-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            if (btn) btn.classList.add('active');
-            updateReports();
+            btn.classList.add('active');
             saveData();
         }
 
@@ -2091,603 +1741,262 @@
         function addFishType() {
             const input = document.getElementById('newFishType');
             const fishType = input.value.trim();
-            
-            if (fishType && !appData.fishTypes.includes(fishType)) {
+            if (fishType && !(appData.fishTypes || []).includes(fishType)) {
                 appData.fishTypes.push(fishType);
-                saveData();
-                input.value = '';
-                updateAllDisplays();
-                showTransactionSuccess('Fish type added successfully!');
+                if (saveData()) { input.value = ''; updateAllDisplays(); showSuccessMessage('transactionSuccess', 'Fish type added!'); }
             }
         }
 
         function removeFishType(fishType) {
-            if (confirm(`Are you sure you want to remove "${fishType}"?`)) {
-                appData.fishTypes = appData.fishTypes.filter(f => f !== fishType);
-                saveData();
-                updateAllDisplays();
-                showTransactionSuccess('Fish type removed successfully!');
+            if (confirm(`Remove "${fishType}"?`)) {
+                appData.fishTypes = (appData.fishTypes || []).filter(f => f !== fishType);
+                if (saveData()) { updateAllDisplays(); showSuccessMessage('transactionSuccess', 'Fish type removed!'); }
             }
         }
 
         function addPerson() {
             const nameInput = document.getElementById('newPersonInput');
-            const typeSelect = document.getElementById('personType');
             const name = nameInput.value.trim();
-            
-            if (name && !appData.people.find(p => p.name === name)) {
-                appData.people.push({
-                    name: name,
-                    type: typeSelect.value
-                });
-                saveData();
-                nameInput.value = '';
-                updateAllDisplays();
-                showTransactionSuccess('Person added successfully!');
+            if (name && !(appData.people || []).find(p => p.name === name)) {
+                appData.people.push({ name, type: document.getElementById('personType').value });
+                if (saveData()) { nameInput.value = ''; updateAllDisplays(); showSuccessMessage('transactionSuccess', 'Person added!'); }
             }
         }
-
+        
         function removePerson(name) {
-            if (confirm(`Are you sure you want to remove "${name}"?`)) {
-                appData.people = appData.people.filter(p => p.name !== name);
-                saveData();
-                updateAllDisplays();
-                showTransactionSuccess('Person removed successfully!');
+            if (confirm(`Remove "${name}"?`)) {
+                appData.people = (appData.people || []).filter(p => p.name !== name);
+                if (saveData()) { updateAllDisplays(); showSuccessMessage('transactionSuccess', 'Person removed!'); }
             }
         }
 
         // Modal Functions
-        function showAddPondModal() {
-            document.getElementById('addPondModal').classList.add('active');
-            updateFishTypeDropdowns();
-        }
-
-        function showAdjustStockModal() {
-            document.getElementById('adjustStockModal').classList.add('active');
-            updatePondDropdowns();
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
+        function showModal(modalId) { document.getElementById(modalId).classList.add('active'); }
+        function closeModal(modalId) { document.getElementById(modalId).classList.remove('active'); }
 
         function loadPondStock() {
             const pondId = document.getElementById('adjustPond').value;
-            if (!pondId) {
-                document.getElementById('currentStockInfo').style.display = 'none';
-                return;
-            }
+            const stockInfo = document.getElementById('currentStockInfo');
+            if (!pondId) { stockInfo.style.display = 'none'; return; }
             
-            const pond = appData.ponds.find(p => p.id == pondId);
-            const stockByFish = {};
+            let stockByFish = {};
+            (appData.transactions || []).forEach(t => (t.fishDetails || []).forEach(f => { if (f.pondId == pondId) stockByFish[f.type] = (stockByFish[f.type] || 0) + (t.type === 'purchase' ? f.quantity : -f.quantity) }));
+            (appData.stockAdjustments || []).forEach(a => { if (a.pondId == pondId) stockByFish[a.fishType] = (stockByFish[a.fishType] || 0) + a.quantity });
             
-            appData.transactions.forEach(t => {
-                if (t.fishDetails) {
-                    t.fishDetails.forEach(f => {
-                        if (f.pondId == pondId) {
-                            if (!stockByFish[f.type]) stockByFish[f.type] = 0;
-                            
-                            if (t.type === 'purchase') {
-                                stockByFish[f.type] += f.quantity;
-                            } else if (t.type === 'sale') {
-                                stockByFish[f.type] -= f.quantity;
-                            }
-                        }
-                    });
-                }
-            });
-            
-            (appData.stockAdjustments || []).forEach(a => {
-                if (a.pondId == pondId) {
-                    if (!stockByFish[a.fishType]) stockByFish[a.fishType] = 0;
-                    stockByFish[a.fishType] += a.quantity;
-                }
-            });
-            
-            const stockDetails = document.getElementById('stockDetails');
-            stockDetails.innerHTML = Object.entries(stockByFish)
-                .filter(([fish, count]) => count > 0)
-                .map(([fish, count]) => `<div>🐟 ${fish}: ${count.toLocaleString('en-IN')} fish</div>`)
-                .join('') || '<div>No fish in this pond</div>';
-            
-            document.getElementById('currentStockInfo').style.display = 'block';
+            document.getElementById('stockDetails').innerHTML = Object.entries(stockByFish).filter(([_, count]) => count > 0).map(([fish, count]) => `<div>🐟 ${fish}: ${count.toLocaleString('en-IN')}</div>`).join('') || '<div>No fish in this pond</div>';
+            stockInfo.style.display = 'block';
             
             const fishSelect = document.getElementById('adjustFishType');
-            fishSelect.innerHTML = `
-                <option value="">Select Fish</option>
-                ${Object.keys(stockByFish).map(f => `<option value="${f}">${f}</option>`).join('')}
-                ${appData.fishTypes.filter(f => !stockByFish[f]).map(f => `<option value="${f}">${f}</option>`).join('')}
-            `;
+            const allFish = [...new Set([...Object.keys(stockByFish), ...(appData.fishTypes || [])])];
+            fishSelect.innerHTML = `<option value="">Select Fish</option>${allFish.map(f => `<option value="${f}">${f}</option>`).join('')}`;
         }
-
-        // Data Management Functions
+        
+        // Data Management
         function exportData() {
-            const exportData = {
-                ...appData,
-                exportDate: new Date().toISOString(),
-                version: '2.0'
-            };
-            
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
+            const dataStr = JSON.stringify({ ...appData, exportDate: new Date().toISOString() }, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `cochin_aquatics_data_${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `cochin_aquatics_backup_${new Date().toISOString().split('T')[0]}.json`;
             link.click();
             URL.revokeObjectURL(url);
-            showTransactionSuccess('Data exported successfully!');
-        }
-
-        function backupData() {
-            exportData();
+            showSuccessMessage('transactionSuccess', 'Data exported!');
         }
 
         function restoreData() {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
-            input.onchange = function(e) {
-                const file = e.target.files[0];
+            input.onchange = e => {
                 const reader = new FileReader();
-                reader.onload = function(event) {
+                reader.onload = event => {
                     try {
-                        const imported = JSON.parse(event.target.result);
-                        appData = imported;
-                        saveData();
-                        updateAllDisplays();
-                        showTransactionSuccess('Data restored successfully!');
-                    } catch (error) {
-                        showError('Error restoring data. Please check the file.');
-                    }
+                        appData = JSON.parse(event.target.result);
+                        saveData().then(() => { updateAllDisplays(); showSuccessMessage('transactionSuccess', 'Data restored!'); });
+                    } catch (error) { showGlobalError('Invalid backup file.'); }
                 };
-                reader.readAsText(file);
+                reader.readAsText(e.target.files[0]);
             };
             input.click();
         }
-
+        
         function clearAllData() {
-            if (confirm('Are you sure you want to clear all data? This cannot be undone!')) {
-                if (confirm('This will delete everything! Are you really sure?')) {
-                    appData = {
-                        transactions: [],
-                        expenses: [],
-                        ponds: [],
-                        stockAdjustments: [],
-                        fishTypes: ['Gold Fish', 'Angel Fish', 'Black Moors', 'Carp', 'Tetra', 'Guppy', 'Koi', 'Molly', 'Platy', 'Swordtail'],
-                        expenseCategories: ['Cleaning', 'Feed', 'Medicine', 'Electricity', 'Maintenance', 'Transport', 'Salary', 'Water Treatment', 'Equipment', 'Other'],
-                        people: [],
-                        nextTransactionId: 1,
-                        nextExpenseId: 1,
-                        nextPondId: 1,
-                        nextAdjustmentId: 1,
-                        currentDashboardPeriod: 'today',
-                        currentReportPeriod: 'month'
-                    };
-                    saveData();
-                    updateAllDisplays();
-                    showTransactionSuccess('All data cleared successfully!');
-                }
+            if (confirm('Are you sure you want to delete all data? This cannot be undone!') && confirm('This is your final warning. Are you absolutely sure?')) {
+                const freshData = { transactions: [], expenses: [], ponds: [], stockAdjustments: [], fishTypes: appData.fishTypes, expenseCategories: appData.expenseCategories, people: [], nextTransactionId: 1, nextExpenseId: 1, nextPondId: 1, nextAdjustmentId: 1, currentDashboardPeriod: 'today', currentReportPeriod: 'month' };
+                appData = freshData;
+                saveData().then(() => { updateAllDisplays(); showSuccessMessage('transactionSuccess', 'All data cleared!'); });
             }
         }
 
-        function showTransactionSuccess(message) {
-            const successElements = [
-                document.getElementById('transactionSuccess'),
-                document.getElementById('expenseSuccess')
-            ];
-            
-            successElements.forEach(el => {
-                if (el) {
-                    el.textContent = message;
-                    el.classList.add('show');
-                    setTimeout(() => el.classList.remove('show'), 3000);
-                }
-            });
-        }
-
-        // Form Event Handlers
+        // Form Submit Handlers
         let isSubmitting = false;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Starting Cochin Aquatics System v2.0...');
-            
-            try {
-                // Set default dates
-                const today = new Date().toISOString().split('T')[0];
-                setTimeout(() => {
-                    const transactionDateField = document.getElementById('transactionDate');
-                    const expenseDateField = document.getElementById('expenseDate');
-                    
-                    if (transactionDateField) transactionDateField.value = today;
-                    if (expenseDateField) expenseDateField.value = today;
-                }, 100);
-
-                // Setup tab switching
-                document.querySelectorAll('.tab').forEach(tab => {
-                    tab.addEventListener('click', function() {
-                        const targetTab = this.dataset.tab;
-                        switchTab(targetTab);
-                    });
-                });
-
-                // Setup period switching for dashboard
-                document.querySelectorAll('#dashboard .period-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        changeDashboardPeriod(this.dataset.period, this);
-                    });
-                });
-
-                // Setup period switching for reports
-                document.querySelectorAll('#reports .period-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        changeReportPeriod(this.dataset.period, this);
-                    });
-                });
-
-                // Transaction form handlers
-                document.getElementById('transactionType').addEventListener('change', updateTransactionForm);
-                document.getElementById('expenseType').addEventListener('change', updateExpenseForm);
-                document.getElementById('adjustPond').addEventListener('change', loadPondStock);
-
-                // Form submissions
-                document.getElementById('transactionForm').addEventListener('submit', handleTransactionSubmit);
-                document.getElementById('expenseForm').addEventListener('submit', handleExpenseSubmit);
-                document.getElementById('addPondForm').addEventListener('submit', handleAddPondSubmit);
-                document.getElementById('adjustStockForm').addEventListener('submit', handleAdjustStockSubmit);
-
-                // Initialize Firebase auth
-                initializeAuth();
-
-                console.log('System initialized successfully!');
-                
-            } catch (error) {
-                console.error('Initialization error:', error);
-                showError('System initialization failed. Please refresh the page.');
-            }
-        });
 
         async function handleTransactionSubmit(e) {
             e.preventDefault();
-            
             if (isSubmitting) return;
             isSubmitting = true;
-            
+
             try {
+                const type = document.getElementById('transactionType').value;
+                const personName = document.getElementById('personName').value || document.getElementById('newPersonName').value;
+                if (!type || !personName) { showGlobalError('Please fill in transaction type and name.'); return; }
+
                 const transaction = {
-                    id: appData.nextTransactionId++,
-                    date: document.getElementById('transactionDate').value,
-                    type: document.getElementById('transactionType').value,
-                    personName: document.getElementById('personName').value || document.getElementById('newPersonName').value,
-                    fishDetails: [],
-                    totalAmount: 0,
-                    totalCost: 0,
-                    notes: document.getElementById('transactionNotes').value
+                    id: appData.nextTransactionId++, date: document.getElementById('transactionDate').value, type, personName,
+                    fishDetails: [], totalAmount: 0, totalCost: 0, notes: document.getElementById('transactionNotes').value
                 };
-                
-                if (!transaction.type || !transaction.personName) {
-                    showError('Please fill in all required fields');
-                    return;
-                }
-                
-                // Collect fish details
-                const fishEntries = document.querySelectorAll('.fish-entry');
+
                 let hasError = false;
-                
-                for (let i = 0; i < fishEntries.length; i++) {
-                    const entry = fishEntries[i];
+                for (const entry of document.querySelectorAll('.fish-entry')) {
                     const fishType = entry.querySelector('.fish-type').value;
-                    const totalQuantity = parseFloat(entry.querySelector('.fish-quantity').value) || 0;
-                    const rate = parseFloat(entry.querySelector('.fish-rate').value) || 0;
-                    const buyRate = parseFloat(entry.querySelector('.fish-buy-rate')?.value) || 0;
-                    
-                    if (fishType && totalQuantity && rate) {
-                        if (transaction.type === 'trading') {
-                            const fishDetail = {
-                                type: fishType,
-                                quantity: totalQuantity,
-                                rate: rate,
-                                buyRate: buyRate,
-                                amount: totalQuantity * rate,
-                                cost: totalQuantity * buyRate,
-                                profit: (totalQuantity * rate) - (totalQuantity * buyRate)
-                            };
-                            transaction.fishDetails.push(fishDetail);
-                            transaction.totalAmount += fishDetail.amount;
-                            transaction.totalCost += fishDetail.cost;
-                        } else {
-                            // Handle pond distribution
-                            const pondDistributions = [];
-                            let distributedQuantity = 0;
-                            
-                            entry.querySelectorAll('.pond-distribution-item').forEach(dist => {
-                                const pondId = dist.querySelector('.pond-select').value;
-                                const quantity = parseFloat(dist.querySelector('.pond-quantity').value) || 0;
-                                
-                                if (pondId && quantity > 0) {
-                                    pondDistributions.push({ pondId, quantity });
-                                    distributedQuantity += quantity;
-                                }
-                            });
-                            
-                            // Default to first pond if no distribution
-                            if (pondDistributions.length === 0 && appData.ponds.length > 0) {
-                                pondDistributions.push({ 
-                                    pondId: appData.ponds[0].id, 
-                                    quantity: totalQuantity 
-                                });
-                                distributedQuantity = totalQuantity;
-                            }
-                            
-                            // Validate stock for sales
-                            if (transaction.type === 'sale') {
-                                for (const dist of pondDistributions) {
-                                    const availableStock = calculatePondStock(dist.pondId, fishType);
-                                    if (dist.quantity > availableStock) {
-                                        const pond = appData.ponds.find(p => p.id == dist.pondId);
-                                        showError(`Insufficient stock in ${pond.name}! ${fishType}: ${dist.quantity} requested, ${availableStock} available`);
-                                        hasError = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (!hasError) {
-                                pondDistributions.forEach(dist => {
-                                    const fishDetail = {
-                                        type: fishType,
-                                        quantity: dist.quantity,
-                                        rate: rate,
-                                        pondId: dist.pondId,
-                                        amount: dist.quantity * rate
-                                    };
-                                    transaction.fishDetails.push(fishDetail);
-                                    transaction.totalAmount += fishDetail.amount;
-                                });
-                            }
+                    const quantity = safeNumber(entry.querySelector('.fish-quantity').value);
+                    const rate = safeNumber(entry.querySelector('.fish-rate').value);
+                    if (!fishType || !quantity || !rate) continue;
+
+                    if (type === 'sale') {
+                        let totalAvailableStock = 0;
+                        (appData.ponds || []).forEach(p => totalAvailableStock += calculatePondStock(p.id, fishType));
+                        if (quantity > totalAvailableStock) {
+                            showGlobalError(`Insufficient stock for ${fishType}! Only ${totalAvailableStock} available.`);
+                            hasError = true; break;
                         }
                     }
+
+                    const fishDetail = { type: fishType, quantity, rate, amount: quantity * rate };
+                    if (type === 'trading') {
+                        const buyRate = safeNumber(entry.querySelector('.fish-buy-rate').value);
+                        fishDetail.buyRate = buyRate;
+                        fishDetail.cost = quantity * buyRate;
+                        transaction.totalCost += fishDetail.cost;
+                    } else {
+                        const pondSelect = entry.querySelector('.pond-select');
+                        if (pondSelect) fishDetail.pondId = pondSelect.value;
+                    }
+                    transaction.fishDetails.push(fishDetail);
+                    transaction.totalAmount += fishDetail.amount;
                 }
-                
+
                 if (hasError) return;
+                if (transaction.fishDetails.length === 0) { showGlobalError('Please add at least one valid fish entry.'); return; }
                 
-                if (transaction.fishDetails.length === 0) {
-                    showError('Please add at least one fish entry!');
-                    return;
+                const newPersonName = document.getElementById('newPersonName').value.trim();
+                if (newPersonName && !(appData.people || []).find(p => p.name === newPersonName)) {
+                    appData.people.push({ name: newPersonName, type: type === 'purchase' ? 'vendor' : 'customer' });
                 }
-                
-                // Add new person if entered
-                const newPersonName = document.getElementById('newPersonName').value;
-                if (newPersonName && !appData.people.find(p => p.name === newPersonName)) {
-                    appData.people.push({
-                        name: newPersonName,
-                        type: transaction.type === 'purchase' ? 'vendor' : 'customer'
-                    });
+
+                (appData.transactions || (appData.transactions = [])).push(transaction);
+                if (await saveData()) {
+                    showSuccessMessage('transactionSuccess', 'Transaction saved!');
+                    e.target.reset();
+                    document.getElementById('transactionDate').valueAsDate = new Date();
+                    document.getElementById('totalAmount').textContent = '0';
+                    updateAllDisplays();
                 }
-                
-                appData.transactions.push(transaction);
-                await saveData();
-                
-                showTransactionSuccess(`${transaction.type} of ${formatMoney(transaction.totalAmount)} added successfully!`);
-                
-                // Reset form
-                this.reset();
-                document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
-                
-                // Reset fish entries
-                document.getElementById('fishEntries').innerHTML = `
-                    <div class="fish-entry">
-                        <h4>
-                            <span><span class="fish-icon">🐟</span> Fish Details #1</span>
-                        </h4>
-                        <div class="row">
-                            <div class="form-group">
-                                <label>Fish Type</label>
-                                <select class="fish-type" required onchange="calculateTotals()">
-                                    <option value="">Select Fish</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Quantity</label>
-                                <input type="number" class="fish-quantity" placeholder="e.g., 1000" required onchange="calculateTotals()">
-                            </div>
-                            <div class="form-group">
-                                <label class="rate-label">Rate per Fish (₹)</label>
-                                <input type="number" step="0.01" class="fish-rate" placeholder="e.g., 1.5" required onchange="calculateTotals()">
-                            </div>
-                        </div>
-                        <div class="pond-section">
-                            <label class="pond-label">Assign to Pond</label>
-                            <div class="pond-distribution" id="pondDist1">
-                                <div class="pond-distribution-item">
-                                    <select class="pond-select">
-                                        <option value="">Select Pond</option>
-                                    </select>
-                                    <input type="number" class="pond-quantity" placeholder="Quantity">
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-sm" onclick="addPondDistribution(1)" style="padding: 5px 10px; font-size: 12px;">+ Add Another Pond</button>
-                        </div>
-                    </div>
-                `;
-                fishEntryCount = 1;
-                document.getElementById('totalAmount').textContent = '0';
-                
-                updateAllDisplays();
-                
-            } catch (error) {
-                console.error('Transaction error:', error);
-                showError('Failed to save transaction. Please try again.');
-            } finally {
-                isSubmitting = false;
-            }
+            } finally { isSubmitting = false; }
         }
 
         async function handleExpenseSubmit(e) {
             e.preventDefault();
-            
-            try {
-                const expenseType = document.getElementById('expenseType').value;
-                const expenseCategory = document.getElementById('expenseCategory').value;
-                const expenseAmount = parseFloat(document.getElementById('expenseAmount').value);
-                
-                if (!expenseType || !expenseCategory || !expenseAmount || expenseAmount <= 0) {
-                    showError('Please fill in all required fields with valid values');
-                    return;
-                }
-                
-                const expense = {
-                    id: appData.nextExpenseId++,
-                    date: document.getElementById('expenseDate').value || new Date().toISOString().split('T')[0],
-                    type: expenseType,
-                    category: expenseCategory,
-                    amount: expenseAmount,
-                    description: document.getElementById('expenseDescription').value,
-                    pondId: document.getElementById('expensePond').value,
-                    employeeName: document.getElementById('employeeName').value
-                };
-                
-                appData.expenses.push(expense);
-                await saveData();
-                
-                showTransactionSuccess(`Expense of ${formatMoney(expenseAmount)} added successfully!`);
-                
-                this.reset();
-                document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
-                
+            const amount = safeNumber(document.getElementById('expenseAmount').value);
+            if (amount <= 0) { showGlobalError('Please enter a valid amount.'); return; }
+
+            const expense = {
+                id: appData.nextExpenseId++, date: document.getElementById('expenseDate').value,
+                type: document.getElementById('expenseType').value, category: document.getElementById('expenseCategory').value, amount,
+                description: document.getElementById('expenseDescription').value,
+                pondId: document.getElementById('expensePond').value,
+                employeeName: document.getElementById('employeeName').value
+            };
+            (appData.expenses || (appData.expenses = [])).push(expense);
+            if (await saveData()) {
+                showSuccessMessage('expenseSuccess', 'Expense saved!');
+                e.target.reset();
+                document.getElementById('expenseDate').valueAsDate = new Date();
                 updateAllDisplays();
-                
-            } catch (error) {
-                console.error('Expense error:', error);
-                showError('Failed to save expense. Please try again.');
             }
         }
 
         async function handleAddPondSubmit(e) {
             e.preventDefault();
-            
-            try {
-                const pondName = document.getElementById('pondName').value.trim();
-                const pondCapacity = parseFloat(document.getElementById('pondCapacity').value) || 0;
-                const pondFishType = document.getElementById('pondFishType').value;
-                
-                if (!pondName || pondCapacity <= 0) {
-                    showError('Please enter valid pond name and capacity');
-                    return;
-                }
-                
-                if (appData.ponds.find(p => p.name.toLowerCase() === pondName.toLowerCase())) {
-                    showError('A pond with this name already exists');
-                    return;
-                }
-                
-                const pond = {
-                    id: appData.nextPondId++,
-                    name: pondName,
-                    capacity: pondCapacity,
-                    primaryFishType: pondFishType
-                };
-                
-                appData.ponds.push(pond);
-                await saveData();
-                
+            const name = document.getElementById('pondName').value.trim();
+            const capacity = safeNumber(document.getElementById('pondCapacity').value);
+            if (!name || capacity <= 0) { showGlobalError('Please enter a valid name and capacity.'); return; }
+            if ((appData.ponds || []).find(p => p.name.toLowerCase() === name.toLowerCase())) { showGlobalError('Pond name already exists.'); return; }
+
+            const pond = { id: appData.nextPondId++, name, capacity, primaryFishType: document.getElementById('pondFishType').value };
+            (appData.ponds || (appData.ponds = [])).push(pond);
+            if (await saveData()) {
                 closeModal('addPondModal');
-                this.reset();
+                e.target.reset();
                 updateAllDisplays();
-                showTransactionSuccess(`Pond "${pondName}" added successfully!`);
-                
-            } catch (error) {
-                console.error('Add pond error:', error);
-                showError('Failed to add pond. Please try again.');
+                showSuccessMessage('transactionSuccess', 'Pond added!');
             }
         }
 
         async function handleAdjustStockSubmit(e) {
             e.preventDefault();
+            const quantity = safeNumber(document.getElementById('adjustQuantity').value);
+            if (!quantity) { showGlobalError('Quantity cannot be zero.'); return; }
             
-            try {
-                const pondId = document.getElementById('adjustPond').value;
-                const adjustmentType = document.getElementById('adjustmentType').value;
-                const fishType = document.getElementById('adjustFishType').value;
-                const quantity = parseFloat(document.getElementById('adjustQuantity').value);
-                const notes = document.getElementById('adjustNotes').value;
-                
-                if (!pondId || !adjustmentType || !fishType || !quantity) {
-                    showError('Please fill in all required fields');
-                    return;
-                }
-                
-                const adjustment = {
-                    id: appData.nextAdjustmentId++,
-                    date: new Date().toISOString(),
-                    pondId: pondId,
-                    type: adjustmentType,
-                    fishType: fishType,
-                    quantity: quantity,
-                    notes: notes
-                };
-                
-                if (!appData.stockAdjustments) {
-                    appData.stockAdjustments = [];
-                }
-                appData.stockAdjustments.push(adjustment);
-                
-                await saveData();
-                
+            const adjustment = {
+                id: appData.nextAdjustmentId++, date: new Date().toISOString(),
+                pondId: document.getElementById('adjustPond').value,
+                type: document.getElementById('adjustmentType').value,
+                fishType: document.getElementById('adjustFishType').value,
+                quantity, notes: document.getElementById('adjustNotes').value
+            };
+
+            if (!adjustment.pondId || !adjustment.type || !adjustment.fishType) { showGlobalError('Please fill all fields.'); return; }
+
+            (appData.stockAdjustments || (appData.stockAdjustments = [])).push(adjustment);
+            if (await saveData()) {
                 closeModal('adjustStockModal');
-                this.reset();
+                e.target.reset();
                 updateAllDisplays();
-                showTransactionSuccess('Stock adjustment saved successfully!');
-                
-            } catch (error) {
-                console.error('Stock adjustment error:', error);
-                showError('Failed to save stock adjustment. Please try again.');
+                showSuccessMessage('transactionSuccess', 'Stock adjusted!');
             }
         }
 
-        // Initialize the application
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('Cochin Aquatics System v2.0 - Starting...');
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('transactionDate').valueAsDate = new Date();
+            document.getElementById('expenseDate').valueAsDate = new Date();
             
-            try {
-                // Wait for Firebase to be fully loaded
-                if (typeof firebase !== 'undefined') {
-                    console.log('Firebase loaded, initializing authentication...');
-                    initializeAuth();
-                } else {
-                    console.error('Firebase not loaded!');
-                    showError('System initialization failed. Please refresh the page.');
-                }
-                
-            } catch (error) {
-                console.error('System initialization error:', error);
-                showError('System initialization failed. Please refresh the page.');
-            }
+            document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
+            document.querySelectorAll('#dashboard .period-btn').forEach(btn => btn.addEventListener('click', () => changePeriod('dashboard', btn.dataset.period, btn)));
+            document.querySelectorAll('#reports .period-btn').forEach(btn => btn.addEventListener('click', () => changePeriod('reports', btn.dataset.period, btn)));
+            
+            document.getElementById('transactionType').addEventListener('change', updateTransactionForm);
+            document.getElementById('expenseType').addEventListener('change', updateExpenseForm);
+            document.getElementById('adjustPond').addEventListener('change', loadPondStock);
+            document.getElementById('transactionForm').addEventListener('input', calculateTotals);
+            
+            document.getElementById('transactionForm').addEventListener('submit', handleTransactionSubmit);
+            document.getElementById('expenseForm').addEventListener('submit', handleExpenseSubmit);
+            document.getElementById('addPondForm').addEventListener('submit', handleAddPondSubmit);
+            document.getElementById('adjustStockForm').addEventListener('submit', handleAdjustStockSubmit);
+            
+            initializeAuth();
         });
 
-        // Global error handler
-        window.addEventListener('error', function(e) {
-            console.error('JavaScript Error:', e.error);
-            console.error('At:', e.filename, 'Line:', e.lineno);
-        });
-
-        // Expose some functions globally for onclick handlers
+        // Expose functions to global scope for onclick handlers
         window.addFishEntry = addFishEntry;
         window.removeFishEntry = removeFishEntry;
         window.addPondDistribution = addPondDistribution;
-        window.calculateTotals = calculateTotals;
-        window.updateTransactionForm = updateTransactionForm;
-        window.updateExpenseForm = updateExpenseForm;
-        window.loadPondStock = loadPondStock;
-        window.showAddPondModal = showAddPondModal;
-        window.showAdjustStockModal = showAdjustStockModal;
+        window.addNewCategory = addNewCategory;
+        window.showModal = showModal;
         window.closeModal = closeModal;
+        window.showAddPondModal = () => showModal('addPondModal');
+        window.showAdjustStockModal = () => showModal('adjustStockModal');
         window.addFishType = addFishType;
         window.removeFishType = removeFishType;
         window.addPerson = addPerson;
         window.removePerson = removePerson;
-        window.addNewCategory = addNewCategory;
         window.exportData = exportData;
-        window.backupData = backupData;
+        window.backupData = exportData;
         window.restoreData = restoreData;
         window.clearAllData = clearAllData;
+    </script>
+</body>
+</html>
