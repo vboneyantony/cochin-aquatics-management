@@ -1362,27 +1362,24 @@
             }
         }
 
-        function removePond(id) {
-            try {
-                appData.ponds = appData.ponds.filter(p => p.id !== id);
-                saveData();
-                updateUI();
-                showSuccess('Pond removed successfully!');
-            } catch (error) {
-                console.error('❌ Remove pond error:', error);
-                showError('Failed to remove pond');
-            }
+        showSuccess('Pond removed successfully!');
+        } catch (error) {
+            console.error('Remove pond error:', error);
+            showError('Failed to remove pond');
         }
- // ===== LIST UPDATES =====
-        function updateLists() {
-            try {
-                updateFishTypesList();
-                updatePeopleList();
-                updatePondsList();
-            } catch (error) {
-                console.error('❌ Update lists error:', error);
-            }
+    }
+
+    // ===== LIST UPDATES =====
+    function updateLists() {
+        try {
+            updateFishTypesList();
+            updatePeopleList();
+            updatePondsList();
+        } catch (error) {
+            console.error('Update lists error:', error);
+            showError('Failed to update lists');
         }
+    }
 
         function updateDropdowns() {
             try {
