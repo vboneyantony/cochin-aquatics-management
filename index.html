@@ -277,6 +277,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Reports Tab -->
             <div id="reports" class="tab-content">
                 <div class="period-selector">
@@ -404,6 +405,7 @@
 
     <!-- Success Message -->
     <div id="successMessage" class="success-message"></div>
+
     <script>
         // 🔥 PRODUCTION-READY COCHIN AQUATICS v2.0 - COMPLETE SYSTEM
         console.log('🚀 Cochin Aquatics System v2.0 - Starting...');
@@ -560,6 +562,7 @@
                 updateLists();
                 updateAllTransactions();
                 updateAllExpenses();
+                updateReports();
             } catch (error) {
                 console.error('❌ UI update error:', error);
             }
@@ -667,6 +670,7 @@
                 console.error('❌ Recent transactions error:', error);
             }
         }
+
         // ===== TRANSACTION MANAGEMENT =====
         function addQuickTransaction() {
             try {
@@ -1020,366 +1024,18 @@
                 showError('Failed to remove pond');
             }
         }
-        // ===== TRANSACTION MANAGEMENT =====
-        function addQuickTransaction() {
+
+        // ===== LIST UPDATES =====
+        function updateLists() {
             try {
-                const type = document.getElementById('quickType').value;
-                const amount = safeNumber(document.getElementById('quickAmount').value);
-                const description = safeString(document.getElementById('quickDescription').value);
-
-                if (amount <= 0) {
-                    showError('Please enter a valid amount');
-                    return;
-                }
-
-                if (!description) {
-                    showError('Please enter a description');
-                    return;
-                }
-
-                const transaction = {
-                    id: generateId(),
-                    date: new Date().toISOString().split('T')[0],
-                    type: type,
-                    amount: amount,
-                    totalAmount: amount,
-                    description: description,
-                    personName: 'Quick Entry',
-                    notes: description
-                };
-
-                appData.transactions.push(transaction);
-                saveData();
-                updateUI();
-
-                // Clear form
-                document.getElementById('quickAmount').value = '';
-                document.getElementById('quickDescription').value = '';
-
-                showSuccess(`${type} of ${formatMoney(amount)} added successfully!`);
+                updateFishTypesList();
+                updatePeopleList();
+                updatePondsList();
             } catch (error) {
-                console.error('❌ Quick transaction error:', error);
-                showError('Failed to add transaction');
+                console.error('❌ Update lists error:', error);
+                showError('Failed to update lists');
             }
         }
-
-        function addTransaction() {
-            try {
-                const date = document.getElementById('transactionDate').value;
-                const type = document.getElementById('transactionType').value;
-                const personId = document.getElementById('transactionPerson').value;
-                const amount = safeNumber(document.getElementById('transactionAmount').value);
-                const notes = safeString(document.getElementById('transactionNotes').value);
-
-                if (!date) {
-                    showError('Please select a date');
-                    return;
-                }
-
-                if (amount <= 0) {
-                    showError('Please enter a valid amount');
-                    return;
-                }
-
-                const person = appData.people.find(p => p.id === personId);
-                const personName = person ? person.name : 'Unknown';
-
-                const transaction = {
-                    id: generateId(),
-                    date: date,
-                    type: type,
-                    amount: amount,
-                    totalAmount: amount,
-                    personId: personId,
-                    personName: personName,
-                    notes: notes
-                };
-
-                appData.transactions.push(transaction);
-                saveData();
-                updateUI();
-
-                // Clear form
-                document.getElementById('transactionDate').value = '';
-                document.getElementById('transactionPerson').value = '';
-                document.getElementById('transactionAmount').value = '';
-                document.getElementById('transactionNotes').value = '';
-
-                showSuccess(`${type} transaction of ${formatMoney(amount)} added successfully!`);
-            } catch (error) {
-                console.error('❌ Add transaction error:', error);
-                showError('Failed to add transaction');
-            }
-        }
-
-        function updateAllTransactions() {
-            try {
-                const container = document.getElementById('allTransactions');
-                if (!container) return;
-
-                if (appData.transactions.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <div class="icon">💰</div>
-                            <h3>No transactions found</h3>
-                            <p>Your transaction history will appear here.</p>
-                        </div>`;
-                    return;
-                }
-
-                const sorted = appData.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                container.innerHTML = sorted.map(item => {
-                    const amount = getAmount(item);
-                    const formattedAmount = formatMoney(amount);
-                    const date = new Date(item.date).toLocaleDateString();
-                    const typeClass = item.type === 'sale' ? 'type-sale' : 'type-purchase';
-                    
-                    return `
-                        <div class="transaction-item">
-                            <div>
-                                <div style="font-weight: 600; margin-bottom: 5px;">#${item.id.slice(-6).toUpperCase()}</div>
-                                <div style="font-size: 14px; color: #6c757d; margin-bottom: 5px;">${date} • ${safeString(item.personName || 'Unknown')}</div>
-                                <div style="font-size: 14px;">${safeString(item.notes || 'No notes')}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div class="transaction-type ${typeClass}">${item.type}</div>
-                                <div style="font-weight: bold; font-size: 18px; margin-top: 5px;">${formattedAmount}</div>
-                            </div>
-                        </div>`;
-                }).join('');
-            } catch (error) {
-                console.error('❌ Update all transactions error:', error);
-            }
-        }
-
-        // ===== EXPENSE MANAGEMENT =====
-        function addExpense() {
-            try {
-                const date = document.getElementById('expenseDate').value;
-                const category = document.getElementById('expenseCategory').value;
-                const amount = safeNumber(document.getElementById('expenseAmount').value);
-                const description = safeString(document.getElementById('expenseDescription').value);
-
-                if (!date) {
-                    showError('Please select a date');
-                    return;
-                }
-
-                if (amount <= 0) {
-                    showError('Please enter a valid amount');
-                    return;
-                }
-
-                if (!description) {
-                    showError('Please enter a description');
-                    return;
-                }
-
-                const expense = {
-                    id: generateId(),
-                    date: date,
-                    category: category,
-                    amount: amount,
-                    description: description
-                };
-
-                appData.expenses.push(expense);
-                saveData();
-                updateUI();
-
-                // Clear form
-                document.getElementById('expenseDate').value = '';
-                document.getElementById('expenseAmount').value = '';
-                document.getElementById('expenseDescription').value = '';
-
-                showSuccess(`Expense of ${formatMoney(amount)} added successfully!`);
-            } catch (error) {
-                console.error('❌ Add expense error:', error);
-                showError('Failed to add expense');
-            }
-        }
-
-        function updateAllExpenses() {
-            try {
-                const container = document.getElementById('allExpenses');
-                if (!container) return;
-
-                if (appData.expenses.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <div class="icon">💳</div>
-                            <h3>No expenses recorded</h3>
-                            <p>Your expense records will appear here.</p>
-                        </div>`;
-                    return;
-                }
-
-                const sorted = appData.expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                container.innerHTML = sorted.map(item => {
-                    const amount = getAmount(item);
-                    const formattedAmount = formatMoney(amount);
-                    const date = new Date(item.date).toLocaleDateString();
-                    
-                    return `
-                        <div class="transaction-item">
-                            <div>
-                                <div style="font-weight: 600; margin-bottom: 5px;">${safeString(item.description)}</div>
-                                <div style="font-size: 14px; color: #6c757d; margin-bottom: 5px;">${date}</div>
-                                <div class="transaction-type type-expense">${item.category}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-weight: bold; font-size: 18px; color: #c62828;">${formattedAmount}</div>
-                            </div>
-                        </div>`;
-                }).join('');
-            } catch (error) {
-                console.error('❌ Update all expenses error:', error);
-            }
-        }
-
-        // ===== SETTINGS MANAGEMENT =====
-        function addFishType() {
-            try {
-                const name = safeString(document.getElementById('newFishType').value);
-                
-                if (!name) {
-                    showError('Please enter a fish type name');
-                    return;
-                }
-
-                if (appData.fishTypes.some(f => f.name.toLowerCase() === name.toLowerCase())) {
-                    showError('This fish type already exists');
-                    return;
-                }
-
-                const fishType = {
-                    id: generateId(),
-                    name: name
-                };
-
-                appData.fishTypes.push(fishType);
-                saveData();
-                updateUI();
-
-                document.getElementById('newFishType').value = '';
-                showSuccess(`Fish type "${name}" added successfully!`);
-            } catch (error) {
-                console.error('❌ Add fish type error:', error);
-                showError('Failed to add fish type');
-            }
-        }
-
-        function addPerson() {
-            try {
-                const name = safeString(document.getElementById('newPersonName').value);
-                const type = document.getElementById('newPersonType').value;
-                
-                if (!name) {
-                    showError('Please enter a person name');
-                    return;
-                }
-
-                if (appData.people.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-                    showError('This person already exists');
-                    return;
-                }
-
-                const person = {
-                    id: generateId(),
-                    name: name,
-                    type: type
-                };
-
-                appData.people.push(person);
-                saveData();
-                updateUI();
-
-                document.getElementById('newPersonName').value = '';
-                showSuccess(`${type} "${name}" added successfully!`);
-            } catch (error) {
-                console.error('❌ Add person error:', error);
-                showError('Failed to add person');
-            }
-        }
-
-        function addPond() {
-            try {
-                const name = safeString(document.getElementById('newPondName').value);
-                const size = safeNumber(document.getElementById('newPondSize').value);
-                
-                if (!name) {
-                    showError('Please enter a pond name');
-                    return;
-                }
-
-                if (appData.ponds.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-                    showError('This pond already exists');
-                    return;
-                }
-
-                const pond = {
-                    id: generateId(),
-                    name: name,
-                    size: size
-                };
-
-                appData.ponds.push(pond);
-                saveData();
-                updateUI();
-
-                document.getElementById('newPondName').value = '';
-                document.getElementById('newPondSize').value = '';
-                showSuccess(`Pond "${name}" added successfully!`);
-            } catch (error) {
-                console.error('❌ Add pond error:', error);
-                showError('Failed to add pond');
-            }
-        }
-
-        function removeFishType(id) {
-            try {
-                appData.fishTypes = appData.fishTypes.filter(f => f.id !== id);
-                saveData();
-                updateUI();
-                showSuccess('Fish type removed successfully!');
-            } catch (error) {
-                console.error('❌ Remove fish type error:', error);
-                showError('Failed to remove fish type');
-            }
-        }
-
-        function removePerson(id) {
-            try {
-                appData.people = appData.people.filter(p => p.id !== id);
-                saveData();
-                updateUI();
-                showSuccess('Person removed successfully!');
-            } catch (error) {
-                console.error('❌ Remove person error:', error);
-                showError('Failed to remove person');
-            }
-        }
-
-        showSuccess('Pond removed successfully!');
-        } catch (error) {
-            console.error('Remove pond error:', error);
-            showError('Failed to remove pond');
-        }
-    }
-
-    // ===== LIST UPDATES =====
-    function updateLists() {
-        try {
-            updateFishTypesList();
-            updatePeopleList();
-            updatePondsList();
-        } catch (error) {
-            console.error('Update lists error:', error);
-            showError('Failed to update lists');
-        }
-    }
 
         function updateDropdowns() {
             try {
@@ -1474,6 +1130,40 @@
                 `).join('');
             } catch (error) {
                 console.error('❌ Update ponds list error:', error);
+            }
+        }
+
+        // ===== REPORTS SYSTEM =====
+        function updateReports() {
+            try {
+                // Calculate report metrics
+                const income = appData.transactions
+                    .filter(t => t.type === 'sale')
+                    .reduce((sum, t) => sum + getAmount(t), 0);
+
+                const purchases = appData.transactions
+                    .filter(t => t.type === 'purchase')
+                    .reduce((sum, t) => sum + getAmount(t), 0);
+
+                const expenses = appData.expenses
+                    .reduce((sum, e) => sum + getAmount(e), 0);
+
+                const margin = income - purchases - expenses;
+
+                // Update report elements
+                const reportElements = {
+                    'reportSales': formatMoney(income),
+                    'reportPurchases': formatMoney(purchases),
+                    'reportExpenses': formatMoney(expenses),
+                    'reportMargin': formatMoney(margin)
+                };
+
+                for (const [id, value] of Object.entries(reportElements)) {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = value;
+                }
+            } catch (error) {
+                console.error('❌ Update reports error:', error);
             }
         }
 
@@ -1653,7 +1343,7 @@
                         form.classList.add('signup-mode');
                         submitBtn.textContent = 'Sign Up';
                         toggle.innerHTML = 'Already have an account? <span>Sign In</span>';
-                    }
+                    </div>
                 });
 
                 // Logout
