@@ -1312,7 +1312,7 @@
 
         // Database Functions
         function getUserDataRef() {
-            return database.ref(`users/${currentUser.uid}/aquaticsData`);
+            return database.ref('aquaticsData');
         }
 
         async function initializeUserData() {
